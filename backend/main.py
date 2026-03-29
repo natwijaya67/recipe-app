@@ -7,7 +7,11 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "cookmark-nine.vercel.app",
+        "cookmark-mztriba2n-natwijaya67s-projects.vercel.app"
+        ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
