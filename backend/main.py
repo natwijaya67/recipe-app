@@ -10,7 +10,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://cookmark-nine.vercel.app",
-        "https://cookmark-mztriba2n-natwijaya67s-projects.vercel.app"
+        "https://cookmark-git-main-natwijaya67s-projects.vercel.app"
         ],
     allow_methods=["*"],
     allow_headers=["*"],
