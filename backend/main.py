@@ -9,8 +9,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "cookmark-nine.vercel.app",
-        "cookmark-mztriba2n-natwijaya67s-projects.vercel.app"
+        "https://cookmark-nine.vercel.app",
+        "https://cookmark-mztriba2n-natwijaya67s-projects.vercel.app"
         ],
     allow_methods=["*"],
     allow_headers=["*"],
