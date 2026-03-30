@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { parseRecipeFromUrl } from "../services/recipeApi";
 // import EmojiPicker from "emoji-picker-react";
+const isMobile = window.innerWidth <= 768;
 
 export default function Collection() {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
@@ -616,33 +617,42 @@ export default function Collection() {
 
                       <p style={styles.inputLabel}>Ingredients</p>
                       {parsedRecipe.versions[0].ingredients.map((ing, i) => (
-                        <div key={i} style={{ display: "flex", gap: "8px" }}>
+                        <div key={i} style={{ 
+                          display: "flex", 
+                          flexDirection: isMobile ? "column" : "row",  // ← stack on mobile
+                          gap: "8px",
+                          padding: isMobile ? "12px 0" : "0",
+                          borderBottom: isMobile ? "1px solid #f3f4f6" : "none",
+                        }}>
+                          {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Amount</p>}
                           <input
-                            style={{ ...styles.input, width: "80px" }}
+                            style={{ ...styles.input, width: isMobile ? "100%" : "80px" }}
                             placeholder="amt"
                             value={ing.amount || ""}
                             onChange={e => {
                               const updated = [...parsedRecipe.versions[0].ingredients];
                               updated[i] = { ...updated[i], amount: e.target.value };
                               setParsedRecipe({
-                                  ...parsedRecipe,
-                                  versions: [{ ...parsedRecipe.versions[0], ingredients: updated }]
-                                });
+                                ...parsedRecipe,
+                                versions: [{ ...parsedRecipe.versions[0], ingredients: updated }]
+                              });
                             }}
                           />
+                          {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Unit</p>}
                           <input
-                            style={{ ...styles.input, width: "80px" }}
+                            style={{ ...styles.input, width: isMobile ? "100%" : "80px" }}
                             placeholder="unit"
                             value={ing.unit || ""}
                             onChange={e => {
                               const updated = [...parsedRecipe.versions[0].ingredients];
                               updated[i] = { ...updated[i], unit: e.target.value };
                               setParsedRecipe({
-                                  ...parsedRecipe,
-                                  versions: [{ ...parsedRecipe.versions[0], ingredients: updated }]
-                                });
+                                ...parsedRecipe,
+                                versions: [{ ...parsedRecipe.versions[0], ingredients: updated }]
+                              });
                             }}
                           />
+                          {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Ingredient</p>}
                           <input
                             style={{ ...styles.input, flex: 1 }}
                             placeholder="ingredient"
@@ -651,23 +661,29 @@ export default function Collection() {
                               const updated = [...parsedRecipe.versions[0].ingredients];
                               updated[i] = { ...updated[i], item: e.target.value };
                               setParsedRecipe({
-                                  ...parsedRecipe,
-                                  versions: [{ ...parsedRecipe.versions[0], ingredients: updated }]
-                                });
+                                ...parsedRecipe,
+                                versions: [{ ...parsedRecipe.versions[0], ingredients: updated }]
+                              });
                             }}
                           />
                           <button
-                              onClick={() => {
-                                const updated = parsedRecipe.versions[0].ingredients.filter((_, idx) => idx !== i);
-                                setParsedRecipe({
-                                  ...parsedRecipe,
-                                  versions: [{ ...parsedRecipe.versions[0], ingredients: updated }]
-                                });
-                              }}
-                              style={{ paddingTop: "8px", background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: "16px" }}
-                            >
-                              ✕
-                            </button>
+                            onClick={() => {
+                              const updated = parsedRecipe.versions[0].ingredients.filter((_, idx) => idx !== i);
+                              setParsedRecipe({
+                                ...parsedRecipe,
+                                versions: [{ ...parsedRecipe.versions[0], ingredients: updated }]
+                              });
+                            }}
+                            style={{
+                              background: "none", border: "none", cursor: "pointer",
+                              color: "#9ca3af", fontSize: "18px",
+                              padding: "12px", minWidth: "44px", minHeight: "44px",
+                              touchAction: "manipulation",
+                              alignSelf: isMobile ? "flex-end" : "center",
+                            }}
+                          >
+                            ✕
+                          </button>
                         </div>
                       ))}
                       <button
@@ -687,9 +703,17 @@ export default function Collection() {
                               {i + 1}.
                             </span>
                             <textarea
-                              style={{ ...styles.input, resize: "vertical", flex: 1 }}
+                              style={{
+                                ...styles.input,
+                                resize: "none",
+                                overflow: "hidden",
+                                minHeight: "120px",
+                                flex: 1,
+                              }}
                               value={instruction}
                               onChange={e => {
+                                e.target.style.height = "auto";
+                                e.target.style.height = e.target.scrollHeight + "px";
                                 const updated = [...parsedRecipe.versions[0].instructions];
                                 updated[i] = e.target.value;
                                 setParsedRecipe({
@@ -706,7 +730,12 @@ export default function Collection() {
                                   versions: [{ ...parsedRecipe.versions[0], instructions: updated }]
                                 });
                               }}
-                              style={{ paddingTop: "8px", background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: "16px" }}
+                              style={{
+                                background: "none", border: "none", cursor: "pointer",
+                                color: "#9ca3af", fontSize: "18px",
+                                padding: "12px", minWidth: "44px", minHeight: "44px",
+                                touchAction: "manipulation",
+                              }}
                             >
                               ✕
                             </button>
@@ -723,23 +752,29 @@ export default function Collection() {
                         + Add step
                       </button>
 
-                      <div style={{ display: "flex", gap: "10px" }}>
-                        <button
-                          style={{ ...styles.submitBtn, background: "#f3f4f6", color: "#111827", marginTop: 0 }}
-                          onClick={handleBack}
-                        >
-                          ← Back
-                        </button>
-                        <button
-                          style={{ ...styles.submitBtn, marginTop: 0 }}
-                          onClick={
-                            ()=>
-                            handleConfirm(selectedEmoji)}
-                        >
-                          Save to Collection
-                        </button>
-                      </div>
-
+                      <div style={{
+                            position: "sticky",
+                            bottom: 0,
+                            background: "#fff",
+                            padding: "12px 24px",
+                            borderTop: "1px solid #e5e7eb",
+                            display: "flex",
+                            gap: "10px",
+                            marginTop: "24px",
+                          }}>
+                            <button
+                              style={{ ...styles.submitBtn, background: "#f3f4f6", color: "#111827", marginTop: 0 }}
+                              onClick={handleBack}
+                            >
+                              ← Back
+                            </button>
+                            <button
+                              style={{ ...styles.submitBtn, marginTop: 0 }}
+                              onClick={() => handleConfirm(selectedEmoji)}
+                            >
+                              Save to Collection
+                            </button>
+                          </div>
                     </div>
                   )}
                 </div>
@@ -857,11 +892,23 @@ const styles = {
   ingredientAmount: { minWidth: "80px", color: "#6b7280" },
   ingredientItem: { color: "#111827" },
   step: { fontSize: "14px", lineHeight: "1.7", color: "#374151", marginBottom: "12px" },
+  // modal: {
+  //   background: "#fff", borderRadius: "12px", width: "100%",
+  //   maxWidth: "480px", margin: "0 16px", overflow: "hidden",
+  //   maxHeight: "85vh",        // ← add this
+  //   overflowY: "auto",        // ← add this
+  // },
   modal: {
-    background: "#fff", borderRadius: "12px", width: "100%",
-    maxWidth: "480px", margin: "0 16px", overflow: "hidden",
-    maxHeight: "85vh",        // ← add this
-    overflowY: "auto",        // ← add this
+    background: "#fff",
+    borderRadius: isMobile ? "0" : "12px",
+    width: "100%",
+    maxWidth: isMobile ? "100%" : "480px",
+    margin: isMobile ? "0" : "0 16px",
+    height: isMobile ? "100%" : "auto",
+    maxHeight: isMobile ? "100%" : "85vh",
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
   },
   modalHeader: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -880,11 +927,16 @@ const styles = {
   tabActive: { color: "#000", borderBottomColor: "#000", fontWeight: 'bold' },
   modalBody: { padding: "24px" },
   inputLabel: { fontSize: "13px", fontWeight: "500", marginBottom: "6px", color: "#374151" },
+  // input: {
+  //   width: "100%", padding: "9px 12px", border: "1px solid #e5e7eb",
+  //   borderRadius: "8px", fontSize: "14px", outline: "none",
+  //   fontFamily: "inherit", boxSizing: "border-box",
+  // },
   input: {
-    width: "100%", padding: "9px 12px", border: "1px solid #e5e7eb",
-    borderRadius: "8px", fontSize: "14px", outline: "none",
-    fontFamily: "inherit", boxSizing: "border-box",
-  },
+  width: "100%", padding: "10px 12px", border: "1px solid #e5e7eb",
+  borderRadius: "8px", fontSize: "16px", outline: "none",  // ← 16px prevents iOS zoom
+  fontFamily: "inherit", boxSizing: "border-box",
+},
   inputHint: { fontSize: "12px", color: "#9ca3af", marginTop: "4px" },
   submitBtn: {
     width: "100%", marginTop: "20px", padding: "10px",
