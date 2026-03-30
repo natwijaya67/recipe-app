@@ -52,6 +52,10 @@ export default function Collection() {
   };
 
   const handleConfirm = (emoji = null) => {
+    if (!parsedRecipe.name || parsedRecipe.name.trim() === "") {
+      alert("Please add a recipe name before saving.");
+      return;
+    }
     const finalRecipe = emoji
       ? { ...parsedRecipe, name: emoji + ' ' + (parsedRecipe.name || "") }
       : parsedRecipe;
@@ -93,10 +97,10 @@ export default function Collection() {
   };
 
   const openEdit = (e, recipe, i) => {
-  e.stopPropagation();
-  setEditingRecipe(JSON.parse(JSON.stringify(recipe))); // deep copy
-  setEditingRecipeIndex(i);
-  setActiveVersionId(recipe.versions[0].id);
+    e.stopPropagation();
+    setEditingRecipe(JSON.parse(JSON.stringify(recipe))); // deep copy
+    setEditingRecipeIndex(i);
+    setActiveVersionId(recipe.versions[0].id);
   };
 
   const closeEdit = () => {
@@ -370,9 +374,16 @@ export default function Collection() {
               <p style={styles.inputLabel}>Ingredients</p>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "8px" }}>
                 {activeVersion.ingredients.map((ing, i) => (
-                  <div key={i} style={{ display: "flex", gap: "8px" }}>
+                  <div key={i} style={{ 
+                    display: "flex", 
+                    flexDirection: isMobile ? "column" : "row",
+                    gap: "8px",
+                    padding: isMobile ? "12px 0" : "0",
+                    borderBottom: isMobile ? "1px solid #f3f4f6" : "none",
+                  }}>
+                    {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Amount</p>}
                     <input
-                      style={{ ...styles.input, width: "80px" }}
+                      style={{ ...styles.input, width: isMobile ? "100%" : "80px" }}
                       placeholder="amt"
                       value={ing.amount || ""}
                       onChange={e => {
@@ -381,8 +392,9 @@ export default function Collection() {
                         updateActiveVersion({ ingredients: updated });
                       }}
                     />
+                    {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Unit</p>}
                     <input
-                      style={{ ...styles.input, width: "80px" }}
+                      style={{ ...styles.input, width: isMobile ? "100%" : "80px" }}
                       placeholder="unit"
                       value={ing.unit || ""}
                       onChange={e => {
@@ -391,6 +403,7 @@ export default function Collection() {
                         updateActiveVersion({ ingredients: updated });
                       }}
                     />
+                    {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Ingredient</p>}
                     <input
                       style={{ ...styles.input, flex: 1 }}
                       placeholder="ingredient"
@@ -406,7 +419,13 @@ export default function Collection() {
                         const updated = activeVersion.ingredients.filter((_, idx) => idx !== i);
                         updateActiveVersion({ ingredients: updated });
                       }}
-                      style={styles.removeRowBtn}
+                      style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        color: "#9ca3af", fontSize: "18px",
+                        padding: "12px", minWidth: "44px", minHeight: "44px",
+                        touchAction: "manipulation",
+                        alignSelf: isMobile ? "flex-end" : "center",
+                      }}
                     >
                       ✕
                     </button>
@@ -431,9 +450,17 @@ export default function Collection() {
                       {i + 1}.
                     </span>
                     <textarea
-                      style={{ ...styles.input, resize: "vertical", flex: 1 }}
+                      style={{
+                        ...styles.input,
+                        resize: "none",
+                        overflow: "hidden",
+                        minHeight: isMobile ? "100px" : "60px",
+                        flex: 1,
+                      }}
                       value={instruction}
                       onChange={e => {
+                        e.target.style.height = "auto";
+                        e.target.style.height = e.target.scrollHeight + "px";
                         const updated = [...activeVersion.instructions];
                         updated[i] = e.target.value;
                         updateActiveVersion({ instructions: updated });
@@ -444,7 +471,12 @@ export default function Collection() {
                         const updated = activeVersion.instructions.filter((_, idx) => idx !== i);
                         updateActiveVersion({ instructions: updated });
                       }}
-                      style={styles.removeRowBtn}
+                      style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        color: "#9ca3af", fontSize: "18px",
+                        padding: "12px", minWidth: "44px", minHeight: "44px",
+                        touchAction: "manipulation",
+                      }}
                     >
                       ✕
                     </button>
