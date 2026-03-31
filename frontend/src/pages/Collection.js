@@ -12,7 +12,7 @@ export default function Collection() {
   const {recipes, setRecipes} = useRecipes();
   const [editingRecipe, setEditingRecipe] = useState(null);      
   const [editingRecipeIndex, setEditingRecipeIndex] = useState(null); 
-  const [activeVersionId, setActiveVersionId] = useState(null);
+  // const [activeVersionId, setActiveVersionId] = useState(null);
 
   const addToGroceries = (recipe, version) => {
     const existing = JSON.parse(localStorage.getItem("groceryList") || "[]");
@@ -35,7 +35,7 @@ export default function Collection() {
     e.stopPropagation();
     setEditingRecipe(JSON.parse(JSON.stringify(recipe))); // deep copy
     setEditingRecipeIndex(i);
-    setActiveVersionId(recipe.versions[0].id);
+    // setActiveVersionId(recipe.versions[0].id);
   };
 
   // const closeEdit = () => {
@@ -155,12 +155,12 @@ export default function Collection() {
             setRecipes(updated);
             setEditingRecipe(null);
             setEditingRecipeIndex(null);
-            setActiveVersionId(null);
+            // setActiveVersionId(null);
           }}
           onClose={() => {
             setEditingRecipe(null);
             setEditingRecipeIndex(null);
-            setActiveVersionId(null);
+            // setActiveVersionId(null);
           }}
           styles={styles}
         />
