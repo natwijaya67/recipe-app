@@ -5,9 +5,10 @@ const isMobile = window.innerWidth <= 768;
 export default function EditRecipeModal({ rcp, rcpIndex, styles }) {
 const {recipes, setRecipes} = useRecipes();
 const [activeVersionId, setActiveVersionId] = useState(rcp.versions[0].id);
-const [editingRecipe, setEditingRecipe] = useState(rcp);      
+const [editingRecipe, setEditingRecipe] = useState(rcp);   
 const [editingRecipeIndex, setEditingRecipeIndex] = useState(rcpIndex); 
 const activeVersion = editingRecipe?.versions.find(v => v.id === activeVersionId);
+if (!editingRecipe) return null; // 👈 guard goes here   
 
   const closeEdit = () => {
     setEditingRecipe(null);

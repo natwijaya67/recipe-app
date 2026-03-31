@@ -23,3 +23,7 @@ class UrlRequest(BaseModel):
 def parse_recipe(body: UrlRequest):
     parser = RecipeParser(body.url)
     return parser.parse()
+
+@app.get("/cron")
+def run_cron():
+    return {"status": "Cron executed"}
