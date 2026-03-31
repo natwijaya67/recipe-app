@@ -83,10 +83,10 @@ export default function AddRecipeModal({ onClose, onSave, styles }) {
                 />
                 <p style={styles.inputHint}>Paste a link from any recipe website</p>
                 {urlError && (
-                <p style={{ fontSize: "13px", color: "#dc2626", marginTop: "8px" }}>
-                    {urlError}
-                </p>
-                )}
+                    <p style={{ fontSize: "13px", color: "#dc2626", marginTop: "8px" }}>
+                        {urlError}
+                    </p>
+                    )}
                 <button
                 style={{ ...styles.submitBtn, opacity: url && !loading ? 1 : 0.5 }}
                 onClick={handleAddFromUrl}
@@ -121,14 +121,32 @@ export default function AddRecipeModal({ onClose, onSave, styles }) {
                     gap: "4px", boxShadow: "0 4px 16px rgba(0,0,0,0.1)", width: "280px"
                 }}>
                     {[
-                    "🍝","🍜","🍲","🍛","🍣","🍱","🍤","🍙",
-                    "🥗","🥘","🫕","🍚","🍖","🍗","🥩","🥚",
-                    "🧆","🥙","🌮","🌯","🫔","🥪","🍔","🍟",
-                    "🍕","🫓","🥨","🧀","🥞","🧇","🥓","🌭",
-                    "🍜","🍝","🍠","🍢","🍡","🍧","🍨","🍦",
-                    "🥧","🧁","🍰","🎂","🍮","🍭","🍬","🍫",
-                    "🍿","🍩","🍪","🌰","🥜","🍯","🧃","🥤",
-                    "🫖","☕","🍵","🧋","🍺","🍷","🥂","🍾",
+                      // Pasta & Rice
+                        "🍝","🍜","🍚","🍛","🫕","🥘",
+                        // Seafood
+                        "🐟","🐠","🐡","🦈","🦐","🦞","🦀","🦑","🐙","🦪","🍣","🍤","🍱",
+                        // Meat & Poultry
+                        "🥩","🍖","🍗","🥓","🌭","🍔",
+                        // Vegetables
+                        "🥦","🥕","🧄","🧅","🫑","🌽","🍆","🥑","🥗","🥬","🍅","🫛",
+                        // Bread & Dough
+                        "🍕","🫓","🥨","🧀","🥞","🧇","🥐","🍞","🥖","🫔","🌮","🌯","🥙","🥪",
+                        // Eggs & Dairy
+                        "🥚","🍳","🧈","🥛",
+                        // Soup & Stews
+                        "🍲","🫖","🥣",
+                        // Snacks & Sides
+                        "🍟","🧆","🥜","🌰","🍿","🧂",
+                        // Sweet
+                        "🍰","🎂","🧁","🍮","🍩","🍪","🍫","🍬","🍭","🍦","🍧","🍨","🥧","🍡","🍢",
+                        // Fruit
+                        "🍓","🫐","🍋","🍊","🍇","🍉","🍑","🍒","🍍","🥭","🍌","🍎","🍐",
+                        // Drinks
+                        "☕","🍵","🧋","🥤","🧃","🍺","🍷","🥂","🍾","🫖","🧊",
+                        // Japanese & Asian
+                        "🍙","🍘","🍥","🥮","🍡","🧆",
+                        // Other
+                        "🫙","🧄","🥫","🍯",
                     ].map(emoji => (
                     <button
                         onMouseDown={e => e.preventDefault()}

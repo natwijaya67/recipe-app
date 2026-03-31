@@ -1,26 +1,33 @@
 import { useState } from "react";
-import { useRecipes } from "../hooks/useRecipes";
+// import { useRecipes } from "../hooks/useRecipes";
 const isMobile = window.innerWidth <= 768;
 
-export default function EditRecipeModal({ rcp, rcpIndex, styles }) {
-const {recipes, setRecipes} = useRecipes();
+export default function EditRecipeModal({ rcp, rcpIndex,  onSave, onClose, styles }) {
+// const {recipes, setRecipes} = useRecipes();
 const [activeVersionId, setActiveVersionId] = useState(rcp.versions[0].id);
-const [editingRecipe, setEditingRecipe] = useState(rcp);   
-const [editingRecipeIndex, setEditingRecipeIndex] = useState(rcpIndex); 
+const [editingRecipe, setEditingRecipe] = useState(rcp);    
 const activeVersion = editingRecipe?.versions.find(v => v.id === activeVersionId);
-if (!editingRecipe) return null; // 👈 guard goes here   
+if (!editingRecipe) return null;   
 
-  const closeEdit = () => {
-    setEditingRecipe(null);
-    setEditingRecipeIndex(null);
-    setActiveVersionId(null);
-  };
+//   const closeEdit = () => {
+//     setEditingRecipe(null);
+//     setEditingRecipeIndex(null);
+//     setActiveVersionId(null);
+//   };
+
+//   const saveEdit = () => {
+//     const updated = [...recipes];
+//     updated[editingRecipeIndex] = editingRecipe;
+//     setRecipes(updated);
+//     closeEdit();
+//   };
 
   const saveEdit = () => {
-    const updated = [...recipes];
-    updated[editingRecipeIndex] = editingRecipe;
-    setRecipes(updated);
-    closeEdit();
+    onSave(editingRecipe, rcpIndex); // ← pass up to parent
+  };
+
+  const closeEdit = () => {
+    onClose(); // ← call parent's close
   };
 
   const updateActiveVersion = (changes) => {
@@ -56,7 +63,7 @@ const deleteVersion = (id) => {
 
     return (
         <div style={styles.overlay} onClick={closeEdit}>
-          <div style={{ ...styles.modal, maxWidth: "620px", maxHeight: "85vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+        <div style={styles.modal} onClick={e => e.stopPropagation()}>
 
             {/* Header */}
             <div style={styles.modalHeader}>
@@ -225,17 +232,28 @@ const deleteVersion = (id) => {
               >
                 + Add step
               </button>
-
+            
               {/* Save */}
-              <div style={{ display: "flex", gap: "10px", marginTop: "24px" }}>
+              <div style={{
+                    position: "sticky",
+                    bottom: 0,
+                    background: "#fff",
+                    padding: "12px 24px",
+                    borderTop: "1px solid #e5e7eb",
+                    display: "flex",
+                    gap: "10px",
+                    marginTop: "24px",
+                    }}>
                 <button
                   style={{ ...styles.submitBtn, background: "#f3f4f6", color: "#111827", marginTop: 0 }}
+                  onMouseDown={e => e.preventDefault()}
                   onClick={closeEdit}
                 >
                   Cancel
                 </button>
                 <button
                   style={{ ...styles.submitBtn, marginTop: 0 }}
+                  onMouseDown={e => e.preventDefault()}
                   onClick={saveEdit}
                 >
                   Save Changes

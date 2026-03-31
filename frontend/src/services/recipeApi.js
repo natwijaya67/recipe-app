@@ -6,6 +6,11 @@ export async function parseRecipeFromUrl(url) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url }),
   });
-  if (!res.ok) throw new Error("Failed to parse recipe");
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to parse recipe");
+  }
+
   return res.json();
 }

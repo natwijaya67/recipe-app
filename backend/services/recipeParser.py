@@ -1,5 +1,6 @@
-from recipe_scrapers import scrape_me
+from recipe_scrapers import scrape_me, scrape_html
 from ingredient_parser import parse_ingredient
+import requests
 
 CUSTOM_UNITS = [
     "sac", "sacs", "bunch", "bunches", "sprig", "sprigs",
@@ -14,7 +15,39 @@ class RecipeParser:
 
     def __init__(self, url):
         self.url = url
-        self.scraper = scrape_me(url)
+        self.scraper = self._get_scraper()
+
+    def _get_scraper(self):
+        # Option 1 — standard scrape_me
+        try:
+            print(f"[1] Trying standard scrape for: {self.url}")
+            scraper = scrape_me(self.url, wild_mode=True)
+            scraper.title()  # test if it actually worked
+            print("[1] Success")
+            return scraper
+        except Exception as e:
+            print(f"[1] Failed: {type(e).__name__} — {e}")
+
+        # Option 2 — manual request with mobile user agent
+        try:
+            print(f"[2] Trying with mobile user agent for: {self.url}")
+            headers = {
+                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15"
+            }
+            response = requests.get(self.url, headers=headers, timeout=10)
+            response.raise_for_status()
+            scraper = scrape_html(response.text, self.url, wild_mode=True)
+            scraper.title()  # test if it actually worked
+            print("[2] Success")
+            return scraper
+        except Exception as e:
+            print(f"[2] Failed: {type(e).__name__} — {e}")
+
+            # Both failed
+            raise Exception(
+                f"Could not parse recipe from {self.url}. "
+                f"The site may block scrapers or use an unsupported format."
+            )
 
     def get_metadata(self):
         return {

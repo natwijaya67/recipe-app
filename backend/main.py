@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from services.recipeParser import RecipeParser
@@ -21,8 +22,12 @@ class UrlRequest(BaseModel):
 
 @app.post("/api/parse")
 def parse_recipe(body: UrlRequest):
-    parser = RecipeParser(body.url)
-    return parser.parse()
+    try:
+        parser = RecipeParser(body.url)
+        return parser.parse()
+    except Exception as e:
+        print(f"Parse error: {e}")
+        raise HTTPException(status_code=422, detail=str(e))
 
 @app.get("/cron")
 def run_cron():
