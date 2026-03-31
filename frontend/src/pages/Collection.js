@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useRecipes } from "../hooks/useRecipes";
 import RecipePopup from "../components/RecipePopup";
 import AddRecipeModal from "../components/AddRecipeModal";
-import EditRecipeModal from "../components/EditRecipeModal";
 
 const isMobile = window.innerWidth <= 768;
 
