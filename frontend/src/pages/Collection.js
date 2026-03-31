@@ -38,52 +38,52 @@ export default function Collection() {
     setActiveVersionId(recipe.versions[0].id);
   };
 
-  const closeEdit = () => {
-    setEditingRecipe(null);
-    setEditingRecipeIndex(null);
-    setActiveVersionId(null);
-  };
+  // const closeEdit = () => {
+  //   setEditingRecipe(null);
+  //   setEditingRecipeIndex(null);
+  //   setActiveVersionId(null);
+  // };
 
-  const saveEdit = () => {
-    const updated = [...recipes];
-    updated[editingRecipeIndex] = editingRecipe;
-    setRecipes(updated);
-    closeEdit();
-  };
+  // const saveEdit = () => {
+  //   const updated = [...recipes];
+  //   updated[editingRecipeIndex] = editingRecipe;
+  //   setRecipes(updated);
+  //   closeEdit();
+  // };
 
-  const activeVersion = editingRecipe?.versions.find(v => v.id === activeVersionId);
+  // const activeVersion = editingRecipe?.versions.find(v => v.id === activeVersionId);
 
-  const updateActiveVersion = (changes) => {
-    setEditingRecipe(prev => ({
-      ...prev,
-      versions: prev.versions.map(v =>
-        v.id === activeVersionId ? { ...v, ...changes } : v
-      )
-    }));
-  };
+  // const updateActiveVersion = (changes) => {
+  //   setEditingRecipe(prev => ({
+  //     ...prev,
+  //     versions: prev.versions.map(v =>
+  //       v.id === activeVersionId ? { ...v, ...changes } : v
+  //     )
+  //   }));
+  // };
 
-  const addVersion = () => {
-    const newVersion = {
-      id: Date.now(),
-      tab_name: "New Version",
-      ingredients: JSON.parse(JSON.stringify(activeVersion.ingredients)),
-      instructions: [...activeVersion.instructions],
-    };
-    setEditingRecipe(prev => ({
-      ...prev,
-      versions: [...prev.versions, newVersion]
-    }));
-    setActiveVersionId(newVersion.id);
-  };
+  // const addVersion = () => {
+  //   const newVersion = {
+  //     id: Date.now(),
+  //     tab_name: "New Version",
+  //     ingredients: JSON.parse(JSON.stringify(activeVersion.ingredients)),
+  //     instructions: [...activeVersion.instructions],
+  //   };
+  //   setEditingRecipe(prev => ({
+  //     ...prev,
+  //     versions: [...prev.versions, newVersion]
+  //   }));
+  //   setActiveVersionId(newVersion.id);
+  // };
 
-  const deleteVersion = (id) => {
-    if (editingRecipe.versions.length === 1) return; // keep at least one
-    setEditingRecipe(prev => ({
-      ...prev,
-      versions: prev.versions.filter(v => v.id !== id)
-    }));
-    setActiveVersionId(editingRecipe.versions[0].id);
-  };
+  // const deleteVersion = (id) => {
+  //   if (editingRecipe.versions.length === 1) return; // keep at least one
+  //   setEditingRecipe(prev => ({
+  //     ...prev,
+  //     versions: prev.versions.filter(v => v.id !== id)
+  //   }));
+  //   setActiveVersionId(editingRecipe.versions[0].id);
+  // };
 
   return (
     <div style={styles.page}>
