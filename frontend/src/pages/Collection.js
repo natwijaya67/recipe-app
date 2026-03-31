@@ -1,88 +1,23 @@
-import { useState, useEffect } from "react";
-import { parseRecipeFromUrl } from "../services/recipeApi";
-// import EmojiPicker from "emoji-picker-react";
+import { useState } from "react";
+import { useRecipes } from "../hooks/useRecipes";
+import RecipePopup from "../components/RecipePopup";
+import AddRecipeModal from "../components/AddRecipeModal";
+import EditRecipeModal from "../components/EditRecipeModal";
+
 const isMobile = window.innerWidth <= 768;
 
 export default function Collection() {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [activeTab, setActiveTab] = useState("url");
-  const [url, setUrl] = useState("");
-  // const [manualRecipe, setManualRecipe] = useState({
-  //   name: "",
-  //   ingredients: "",
-  //   instructions: "",
-  // });
-  const [recipes, setRecipes] = useState(() => {
-    const saved = localStorage.getItem("recipes");
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [loading, setLoading] = useState(false);
-  const [urlError, setUrlError] = useState(null);
-  const [modalStep, setModalStep] = useState("input");
-  const [parsedRecipe, setParsedRecipe] = useState(null);
+  const {recipes, setRecipes} = useRecipes();
   const [editingRecipe, setEditingRecipe] = useState(null);      
   const [editingRecipeIndex, setEditingRecipeIndex] = useState(null); 
   const [activeVersionId, setActiveVersionId] = useState(null);
-  const [activePopupVersionId, setActivePopupVersionId] = useState(null); 
-  const [servingMultiplier, setServingMultiplier] = useState(1);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [selectedEmoji, setSelectedEmoji] = useState("😀");
 
-  useEffect(() => {
-    localStorage.setItem("recipes", JSON.stringify(recipes));
-  }, [recipes]);
-
-  const handleAddFromUrl = async () => {
-    if (!url) return;
-    setLoading(true);
-    setUrlError(null);
-
-    try {
-      const parsed = await parseRecipeFromUrl(url);
-      // setRecipes(prev => [...prev, parsed]);
-
-      setParsedRecipe(parsed);
-      setModalStep("review");
-    } catch (err) {
-      setUrlError("Could not parse this URL. Please try another.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleConfirm = (emoji = null) => {
-    if (!parsedRecipe.name || parsedRecipe.name.trim() === "") {
-      alert("Please add a recipe name before saving.");
-      return;
-    }
-    const finalRecipe = emoji
-      ? { ...parsedRecipe, name: emoji + ' ' + (parsedRecipe.name || "") }
-      : parsedRecipe;
-    setRecipes(prev => [...prev, finalRecipe]);
-    setShowAddModal(false);
-    setModalStep("input");
-    setParsedRecipe(null);
-    setUrl("");
-  };
-
-  const handleBack = () => {
-    setModalStep("input");
-    setParsedRecipe(null);
-  };
-
-  // const handleAddManual = () => {
-  //   // TODO: save manual recipe
-  //   console.log("Manual recipe:", manualRecipe);
-  //   setShowAddModal(false);
-  //   setManualRecipe({ name: "", ingredients: "", instructions: "" });
-  // };
-
-  const addToGroceries = (recipe) => {
+  const addToGroceries = (recipe, version) => {
     const existing = JSON.parse(localStorage.getItem("groceryList") || "[]");
-    const version = recipe.versions?.find(v => v.id === activePopupVersionId) || recipe.versions?.[0];
-    const ingredients = version?.ingredients || [];
-    const newItems = ingredients.map(ing => ({
+    const activeIngredients = version?.ingredients || recipe.versions?.[0]?.ingredients || [];
+    const newItems = activeIngredients.map(ing => ({
       id: Date.now() + Math.random(),
       text: [ing.item].filter(Boolean).join(" "),
       checked: false,
@@ -150,15 +85,6 @@ export default function Collection() {
     setActiveVersionId(editingRecipe.versions[0].id);
   };
 
-  const scaleAmount = (amount) => {
-    if (!amount) return null;
-    const num = parseFloat(amount);
-    if (isNaN(num)) return amount; // return as-is if not a number (e.g. "½")
-    const scaled = num * servingMultiplier;
-    // Show clean decimals
-    return scaled % 1 === 0 ? String(scaled) : scaled.toFixed(2).replace(/\.?0+$/, "");
-  };
-
   return (
     <div style={styles.page}>
 
@@ -181,8 +107,6 @@ export default function Collection() {
             style={{...styles.card, position: "relative"}}
             onClick={() => {
               setSelectedRecipe(recipe);
-              setActivePopupVersionId(recipe.versions[0].id);
-              setServingMultiplier(1);
             }}
             onMouseEnter={e => e.currentTarget.style.borderColor = "#9ca3af"}
             onMouseLeave={e => e.currentTarget.style.borderColor = "#e5e7eb"}
@@ -193,9 +117,6 @@ export default function Collection() {
             >
               ✕
             </button>
-            {/* {recipe.image && (
-              <img src={recipe.image} alt={recipe.name} style={styles.cardImage} />
-            )} */}
             <div style={styles.cardBody}>
               <p style={styles.cardName}>{recipe.name}</p>
               <p style={styles.cardMeta}>
@@ -209,118 +130,25 @@ export default function Collection() {
 
       {/* Recipe Detail Popup */}
       {selectedRecipe && (
-        <div style={styles.overlay} onClick={() => setSelectedRecipe(null)}>
-          <div style={styles.popup} onClick={e => e.stopPropagation()}>
-            <div style={styles.popupHeader}>
-              <div>
-                <h2 style={styles.popupTitle}>{selectedRecipe.name}</h2>
-                <a style={styles.popupMeta} href={selectedRecipe.url} target="_blank" rel="noreferrer">
-                  🔗 Link to original recipe webpage
-                </a>
-                <p style={styles.popupMeta}>
-                  {selectedRecipe.total_time && `${selectedRecipe.total_time} mins · `}
-                  Serves{" "}
-                    <input
-                      type="number"
-                      min="0.5"
-                      step="0.5"
-                      value={servingMultiplier}
-                      onChange={e => setServingMultiplier(parseFloat(e.target.value) || 1)}
-                      style={{
-                        width: "48px", padding: "2px 6px", border: "1px solid #e5e7eb",
-                        borderRadius: "6px", fontSize: "13px", textAlign: "center",
-                        outline: "none", fontFamily: "inherit",
-                      }}
-                    />
-                    {selectedRecipe.servings && ` (original: ${selectedRecipe.servings})`}
-                  {selectedRecipe.versions?.[0]?.ingredients?.length || 0}  ingredients
-                </p>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <button
-                  style={styles.groceryBtn}
-                  onClick={() => addToGroceries(selectedRecipe)}
-                >
-                  + Add to Grocery List
-                </button>
-                <button
-                  style={styles.groceryBtn}
-                  onClick={e => {
-                    const i = recipes.findIndex(r => r.url === selectedRecipe.url);
-                    openEdit(e, selectedRecipe, i);
-                    setSelectedRecipe(null); // close the detail popup
-                  }}
-                  >
-                    Edit
-                </button>
-              <button style={styles.closeBtn} onClick={() => setSelectedRecipe(null)}>✕</button>
-            </div>
-            </div>
-
-            {/* Version tabs */}
-            {selectedRecipe.versions?.length > 1 && (
-              <div style={styles.tabs}>
-                {selectedRecipe.versions.map(v => (
-                  <button
-                    key={v.id}
-                    style={{ ...styles.tab, ...(v.id === activePopupVersionId ? styles.tabActive : {}) }}
-                    onClick={() => setActivePopupVersionId(v.id)}
-                  >
-                    {v.tab_name}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <div style={styles.popupBody}>
-              {/* <div style={styles.section}>
-                <p style={styles.sectionTitle}>Ingredients</p>
-                {selectedRecipe.versions?.[0]?.ingredients.map((ing, i) => (
-                  <div key={i} style={styles.ingredientRow}>
-                    <span style={styles.ingredientAmount}>
-                      {[ing.amount, ing.unit].filter(Boolean).join(" ") || "—"}
-                    </span>
-                    <span style={styles.ingredientItem}>{ing.item}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={styles.section}>
-                <p style={styles.sectionTitle}>Instructions</p>
-                {selectedRecipe.versions?.[0]?.instructions.map((step, i) => (
-                  <p key={i} style={styles.step}>{i + 1}. {step}</p>
-                ))}
-              </div> */}
-              {(() => {
-                const version = selectedRecipe.versions?.find(v => v.id === activePopupVersionId) 
-                  || selectedRecipe.versions?.[0];
-                return (
-                  <>
-                    <div style={styles.section}>
-                      <p style={styles.sectionTitle}>Ingredients</p>
-                      {version.ingredients.map((ing, i) => (
-                        <div key={i} style={styles.ingredientRow}>
-                          <span style={styles.ingredientAmount}>
-                            {[scaleAmount(ing.amount), ing.unit].filter(Boolean).join(" ") || "—"}
-                          </span>
-                          <span style={styles.ingredientItem}>{ing.item}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={styles.section}>
-                      <p style={styles.sectionTitle}>Instructions</p>
-                      {version.instructions.map((step, i) => (
-                        <p key={i} style={styles.step}>{i + 1}. {step}</p>
-                      ))}
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        </div>
+        <RecipePopup
+          recipe={selectedRecipe}
+          onClose={() => setSelectedRecipe(null)}
+          onEdit={e => {
+            const i = recipes.findIndex(r => r.url === selectedRecipe.url);
+            openEdit(e, selectedRecipe, i);
+            setSelectedRecipe(null);
+          }}
+          onAddToGroceries={addToGroceries}
+          styles={styles}
+        />
       )}
 
       {editingRecipe && activeVersion && (
+        // <EditRecipeModal
+        //   rcp={editingRecipe}
+        //   rcpIndex = {editingRecipeIndex}
+        //   styles={styles}
+        // />
         <div style={styles.overlay} onClick={closeEdit}>
           <div style={{ ...styles.modal, maxWidth: "620px", maxHeight: "85vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
 
@@ -515,351 +343,12 @@ export default function Collection() {
 
       {/* Add Recipe Modal */}
       {showAddModal && (
-        <div style={styles.overlay} onClick={() => setShowAddModal(false)}>
-          <div style={styles.modal} onClick={e => e.stopPropagation()}>
-
-            {/* Modal Header */}
-            <div style={styles.modalHeader}>
-              <h3 style={styles.modalTitle}>Add Recipe</h3>
-              <button style={styles.closeBtn} onClick={() => setShowAddModal(false)}>✕</button>
-            </div>
-
-            {/* Tabs */}
-            <div style={styles.tabs}>
-              <button
-                style={{ ...styles.tab, ...(activeTab === "url" ? styles.tabActive : {}) }}
-                onClick={() => setActiveTab("url")}
-              >
-                Paste a URL
-              </button>
-              {/* <button
-                style={{ ...styles.tab, ...(activeTab === "manual" ? styles.tabActive : {}) }}
-                onClick={() => setActiveTab("manual")}
-              >
-                Type manually
-              </button> */}
-            </div>
-
-            {/* Tab Content */}
-            <div style={styles.modalBody}>
-
-              {activeTab === "url" && (
-                <div>
-                  {modalStep === "input" && (
-                    <div>
-                      <p style={styles.inputLabel}>Recipe URL</p>
-                      <input
-                        type="text"
-                        placeholder="https://www.allrecipes.com/recipe/..."
-                        value={url}
-                        onChange={e => setUrl(e.target.value)}
-                        style={styles.input}
-                      />
-                      <p style={styles.inputHint}>Paste a link from any recipe website</p>
-                      {urlError && (
-                        <p style={{ fontSize: "13px", color: "#dc2626", marginTop: "8px" }}>
-                          {urlError}
-                        </p>
-                      )}
-                      <button
-                        style={{ ...styles.submitBtn, opacity: url && !loading ? 1 : 0.5 }}
-                        onClick={handleAddFromUrl}
-                        disabled={!url || loading}
-                      >
-                        {loading ? "Parsing..." : "Parse Recipe"}
-                      </button>
-                    </div>
-                  )}
-
-                  {modalStep === "review" && parsedRecipe.versions[0] && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-
-                      <p style={styles.inputLabel}>Recipe Name</p>
-                      <div style={{ position: "relative", display: "flex", gap: "8px" }}>
-                      <button
-                        style={styles.emojiBtn}
-                        onClick={() => setShowEmojiPicker(prev => !prev)}
-                      >
-                        {selectedEmoji}
-                      </button>
-                      <input
-                        style={{ ...styles.input, flex: 1 }}
-                        value={parsedRecipe.name || ""}
-                        onChange={e => setParsedRecipe({ ...parsedRecipe, name: e.target.value })}
-                      />
-                      {showEmojiPicker && (
-                        <div style={{
-                          position: "absolute", top: "44px", left: 0, zIndex: 1000,
-                          background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px",
-                          padding: "12px", display: "grid", gridTemplateColumns: "repeat(8, 1fr)",
-                          gap: "4px", boxShadow: "0 4px 16px rgba(0,0,0,0.1)", width: "280px"
-                        }}>
-                          {[
-                            "🍝","🍜","🍲","🍛","🍣","🍱","🍤","🍙",
-                            "🥗","🥘","🫕","🍚","🍖","🍗","🥩","🥚",
-                            "🧆","🥙","🌮","🌯","🫔","🥪","🍔","🍟",
-                            "🍕","🫓","🥨","🧀","🥞","🧇","🥓","🌭",
-                            "🍜","🍝","🍠","🍢","🍡","🍧","🍨","🍦",
-                            "🥧","🧁","🍰","🎂","🍮","🍭","🍬","🍫",
-                            "🍿","🍩","🍪","🌰","🥜","🍯","🧃","🥤",
-                            "🫖","☕","🍵","🧋","🍺","🍷","🥂","🍾",
-                          ].map(emoji => (
-                            <button
-                              key={emoji}
-                              onClick={() => {
-                                setSelectedEmoji(emoji)
-                                setShowEmojiPicker(false);
-                              }}
-                              style={{
-                                background: "none", border: "none", cursor: "pointer",
-                                fontSize: "20px", padding: "4px", borderRadius: "6px",
-                                lineHeight: 1,
-                              }}
-                              onMouseEnter={e => e.currentTarget.style.background = "#f3f4f6"}
-                              onMouseLeave={e => e.currentTarget.style.background = "none"}
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                      {parsedRecipe.total_time && (
-                        <>
-                          <p style={styles.inputLabel}>Total Time (mins)</p>
-                          <input
-                            style={styles.input}
-                            value={parsedRecipe.total_time}
-                            onChange={e => setParsedRecipe({ ...parsedRecipe, total_time: e.target.value })}
-                          />
-                        </>
-                      )}
-
-                      {parsedRecipe.servings && (
-                        <>
-                          <p style={styles.inputLabel}>Servings</p>
-                          <input
-                            style={styles.input}
-                            value={parsedRecipe.servings}
-                            onChange={e => setParsedRecipe({ ...parsedRecipe, servings: e.target.value })}
-                          />
-                        </>
-                      )}
-
-                      <p style={styles.inputLabel}>Ingredients</p>
-                      {parsedRecipe.versions[0].ingredients.map((ing, i) => (
-                        <div key={i} style={{ 
-                          display: "flex", 
-                          flexDirection: isMobile ? "column" : "row",  // ← stack on mobile
-                          gap: "8px",
-                          padding: isMobile ? "12px 0" : "0",
-                          borderBottom: isMobile ? "1px solid #f3f4f6" : "none",
-                        }}>
-                          {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Amount</p>}
-                          <input
-                            style={{ ...styles.input, width: isMobile ? "100%" : "80px" }}
-                            placeholder="amt"
-                            value={ing.amount || ""}
-                            onChange={e => {
-                              const updated = [...parsedRecipe.versions[0].ingredients];
-                              updated[i] = { ...updated[i], amount: e.target.value };
-                              setParsedRecipe({
-                                ...parsedRecipe,
-                                versions: [{ ...parsedRecipe.versions[0], ingredients: updated }]
-                              });
-                            }}
-                          />
-                          {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Unit</p>}
-                          <input
-                            style={{ ...styles.input, width: isMobile ? "100%" : "80px" }}
-                            placeholder="unit"
-                            value={ing.unit || ""}
-                            onChange={e => {
-                              const updated = [...parsedRecipe.versions[0].ingredients];
-                              updated[i] = { ...updated[i], unit: e.target.value };
-                              setParsedRecipe({
-                                ...parsedRecipe,
-                                versions: [{ ...parsedRecipe.versions[0], ingredients: updated }]
-                              });
-                            }}
-                          />
-                          {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Ingredient</p>}
-                          <input
-                            style={{ ...styles.input, flex: 1 }}
-                            placeholder="ingredient"
-                            value={ing.item || ""}
-                            onChange={e => {
-                              const updated = [...parsedRecipe.versions[0].ingredients];
-                              updated[i] = { ...updated[i], item: e.target.value };
-                              setParsedRecipe({
-                                ...parsedRecipe,
-                                versions: [{ ...parsedRecipe.versions[0], ingredients: updated }]
-                              });
-                            }}
-                          />
-                          <button
-                            onClick={() => {
-                              const updated = parsedRecipe.versions[0].ingredients.filter((_, idx) => idx !== i);
-                              setParsedRecipe({
-                                ...parsedRecipe,
-                                versions: [{ ...parsedRecipe.versions[0], ingredients: updated }]
-                              });
-                            }}
-                            style={{
-                              background: "none", border: "none", cursor: "pointer",
-                              color: "#9ca3af", fontSize: "18px",
-                              padding: "12px", minWidth: "44px", minHeight: "44px",
-                              touchAction: "manipulation",
-                              alignSelf: isMobile ? "flex-end" : "center",
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        style={styles.addRowBtn}
-                        onClick={() => setParsedRecipe({
-                          ...parsedRecipe,
-                          ingredients: [...parsedRecipe.versions[0].ingredients, { amount: "", unit: "", item: "" }]
-                        })}
-                      >
-                        + Add ingredient
-                      </button>
-
-                      <p style={styles.inputLabel}>Instructions</p>
-                        {parsedRecipe.versions[0].instructions.map((instruction, i) => (
-                          <div key={i} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                            <span style={{ paddingTop: "10px", fontSize: "13px", color: "#9ca3af", minWidth: "20px" }}>
-                              {i + 1}.
-                            </span>
-                            <textarea
-                              style={{
-                                ...styles.input,
-                                resize: "none",
-                                overflow: "hidden",
-                                minHeight: "120px",
-                                flex: 1,
-                              }}
-                              value={instruction}
-                              onChange={e => {
-                                e.target.style.height = "auto";
-                                e.target.style.height = e.target.scrollHeight + "px";
-                                const updated = [...parsedRecipe.versions[0].instructions];
-                                updated[i] = e.target.value;
-                                setParsedRecipe({
-                                  ...parsedRecipe,
-                                  versions: [{ ...parsedRecipe.versions[0], instructions: updated }]
-                                });
-                              }}
-                            />
-                            <button
-                              onClick={() => {
-                                const updated = parsedRecipe.versions[0].instructions.filter((_, idx) => idx !== i);
-                                setParsedRecipe({
-                                  ...parsedRecipe,
-                                  versions: [{ ...parsedRecipe.versions[0], instructions: updated }]
-                                });
-                              }}
-                              style={{
-                                background: "none", border: "none", cursor: "pointer",
-                                color: "#9ca3af", fontSize: "18px",
-                                padding: "12px", minWidth: "44px", minHeight: "44px",
-                                touchAction: "manipulation",
-                              }}
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
-                      <button
-                        style={styles.addRowBtn}
-                        onClick={() => 
-                          setParsedRecipe({
-                          ...parsedRecipe,
-                          versions: [{...parsedRecipe.versions[0], instructions: ""}]
-                        })}
-                      >
-                        + Add step
-                      </button>
-
-                      <div style={{
-                            position: "sticky",
-                            bottom: 0,
-                            background: "#fff",
-                            padding: "12px 24px",
-                            borderTop: "1px solid #e5e7eb",
-                            display: "flex",
-                            gap: "10px",
-                            marginTop: "24px",
-                          }}>
-                            <button
-                              style={{ ...styles.submitBtn, background: "#f3f4f6", color: "#111827", marginTop: 0 }}
-                              onClick={handleBack}
-                            >
-                              ← Back
-                            </button>
-                            <button
-                              style={{ ...styles.submitBtn, marginTop: 0 }}
-                              onClick={() => handleConfirm(selectedEmoji)}
-                            >
-                              Save to Collection
-                            </button>
-                          </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              
-
-              {/* {activeTab === "manual" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div>
-                    <p style={styles.inputLabel}>Recipe Name</p>
-                    <input
-                      type="text"
-                      placeholder="e.g. Grandma's Lasagna"
-                      value={manualRecipe.name}
-                      onChange={e => setManualRecipe({ ...manualRecipe, name: e.target.value })}
-                      style={styles.input}
-                    />
-                  </div>
-                  <div>
-                    <p style={styles.inputLabel}>Ingredients</p>
-                    <textarea
-                      placeholder={"2 cups flour\n1 tsp salt\n3 eggs"}
-                      value={manualRecipe.ingredients}
-                      onChange={e => setManualRecipe({ ...manualRecipe, ingredients: e.target.value })}
-                      style={{ ...styles.input, height: "100px", resize: "vertical" }}
-                    />
-                    <p style={styles.inputHint}>One ingredient per line</p>
-                  </div>
-                  <div>
-                    <p style={styles.inputLabel}>Instructions</p>
-                    <textarea
-                      placeholder={"Mix the flour and salt.\nAdd eggs and stir."}
-                      value={manualRecipe.instructions}
-                      onChange={e => setManualRecipe({ ...manualRecipe, instructions: e.target.value })}
-                      style={{ ...styles.input, height: "120px", resize: "vertical" }}
-                    />
-                    <p style={styles.inputHint}>One step per line</p>
-                  </div>
-                  <button
-                    style={{ ...styles.submitBtn, opacity: manualRecipe.name ? 1 : 0.5 }}
-                    onClick={handleAddManual}
-                    disabled={!manualRecipe.name}
-                  >
-                    Add Recipe
-                  </button>
-                </div>
-              )} */}
-
-            </div>
-          </div>
-        </div>
-      )}
+      <AddRecipeModal
+        onClose={() => setShowAddModal(false)}
+        onSave={recipe => setRecipes(prev => [...prev, recipe])}
+        styles={styles}
+        />
+)}
 
     </div>
   );
