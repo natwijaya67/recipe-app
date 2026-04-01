@@ -9,19 +9,6 @@ const [editingRecipe, setEditingRecipe] = useState(rcp);
 const activeVersion = editingRecipe?.versions.find(v => v.id === activeVersionId);
 if (!editingRecipe) return null;   
 
-//   const closeEdit = () => {
-//     setEditingRecipe(null);
-//     setEditingRecipeIndex(null);
-//     setActiveVersionId(null);
-//   };
-
-//   const saveEdit = () => {
-//     const updated = [...recipes];
-//     updated[editingRecipeIndex] = editingRecipe;
-//     setRecipes(updated);
-//     closeEdit();
-//   };
-
   const saveEdit = () => {
     onSave(editingRecipe, rcpIndex); // ← pass up to parent
   };

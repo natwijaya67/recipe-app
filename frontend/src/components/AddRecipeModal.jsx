@@ -1,7 +1,95 @@
 import { useState } from "react";
 import { parseRecipeFromUrl } from "../services/recipeApi";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const isMobile = window.innerWidth <= 768;
+
+function SortableInstruction({ id, instruction, index, onChange, onDelete, styles, isMobile }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={{ ...style, display: "flex", gap: "8px", alignItems: "stretch" }}>
+
+      {/* Left drag zone — full height, no symbol */}
+      <div
+        {...attributes}
+        {...listeners}
+        style={{
+          width: "32px",
+          flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          paddingTop: "14px",
+          cursor: isDragging ? "grabbing" : "grab",
+          touchAction: "none",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          WebkitTouchCallout: "none",
+          WebkitTapHighlightColor: "transparent",
+          background: isDragging ? "#f3f4f6" : "transparent",
+          borderRadius: "6px",
+        }}
+      >
+        <span style={{ fontSize: "13px", color: "#9ca3af" }}>{index + 1}.</span>
+      </div>
+
+      {/* Textarea */}
+      <textarea
+        style={{
+          ...styles.input,
+          resize: "none",
+          overflow: "hidden",
+          minHeight: isMobile ? "100px" : "60px",
+          flex: 1,
+        }}
+        value={instruction}
+        onChange={e => {
+          e.target.style.height = "auto";
+          e.target.style.height = e.target.scrollHeight + "px";
+          onChange(e.target.value);
+        }}
+      />
+
+      {/* Delete button */}
+      <button
+        onMouseDown={e => e.preventDefault()}
+        onClick={onDelete}
+        style={{
+          background: "none", border: "none", cursor: "pointer",
+          color: "#9ca3af", fontSize: "18px",
+          padding: "12px", minWidth: "44px", minHeight: "44px",
+          touchAction: "manipulation",
+          alignSelf: "flex-start",
+        }}
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
 
 export default function AddRecipeModal({ onClose, onSave, styles }) {
   const [activeTab, setActiveTab] = useState("url");
@@ -13,20 +101,39 @@ export default function AddRecipeModal({ onClose, onSave, styles }) {
   const [selectedEmoji, setSelectedEmoji] = useState("😀");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  const handleAddFromUrl = async () => {
-    if (!url) return;
-    setLoading(true);
-    setUrlError(null);
-    try {
-      const parsed = await parseRecipeFromUrl(url);
-      setParsedRecipe(parsed);
-      setModalStep("review");
-    } catch (err) {
-      setUrlError("Could not parse this URL. Please try another.");
-    } finally {
-      setLoading(false);
-    }
-  };
+const handleAddFromUrl = async () => {
+  if (!url) return;
+  setLoading(true);
+  setUrlError(null);
+  try {
+    const parsed = await parseRecipeFromUrl(url);
+    // console.log('parsed: ' + parsed.versions[0].instructions)
+    const structured = {
+      url: parsed.url,
+      name: parsed.name,
+      image: parsed.image,
+      servings: parsed.servings,
+      total_time: parsed.total_time,
+      versions: [{
+        id: Date.now(),
+        tab_name: "Original",
+        ingredients: parsed.versions[0].ingredients || [],
+        instructions: (parsed.versions[0].instructions || []).map((text, i) => ({
+          id: `inst-${Date.now()}-${i}`,
+          text,
+        })),
+      }]
+    };
+    // console.log('structured: ' + structured.versions[0].instructions)
+    setParsedRecipe(structured);
+    // setParsedRecipe(parsed);
+    setModalStep("review");
+  } catch (err) {
+    setUrlError(err.message || "Could not parse this URL. Please try another.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleConfirm = () => {
     if (!parsedRecipe.name || parsedRecipe.name.trim() === "") {
@@ -45,6 +152,25 @@ export default function AddRecipeModal({ onClose, onSave, styles }) {
     setModalStep("input");
     setParsedRecipe(null);
   };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { distance: 5 } })
+    );
+
+    const handleInstructionDragEnd = (event) => {
+        const { active, over } = event;
+        if (active.id !== over?.id) {
+            const instructions = parsedRecipe.versions[0].instructions;
+            const oldIndex = instructions.findIndex(inst => inst.id === active.id);
+            const newIndex = instructions.findIndex(inst => inst.id === over.id);
+            const reordered = arrayMove(instructions, oldIndex, newIndex);
+            setParsedRecipe({
+            ...parsedRecipe,
+            versions: [{ ...parsedRecipe.versions[0], instructions: reordered }]
+            });
+        }
+        };
 
   return (
     <div style={styles.overlay} onClick={onClose}>
@@ -94,12 +220,39 @@ export default function AddRecipeModal({ onClose, onSave, styles }) {
                 >
                 {loading ? "Parsing..." : "Parse Recipe"}
                 </button>
+                <button
+                    onClick={() => {
+                        setParsedRecipe({
+                        url: "https://test.com",
+                        name: "Test Recipe",
+                        image: null,
+                        servings: null,
+                        total_time: null,
+                        versions: [{
+                            id: 1,
+                            tab_name: "Original",
+                            ingredients: [
+                            { amount: "2", unit: "cups", item: "flour" },
+                            ],
+                            instructions: [
+                            { id: "inst-1", text: "Step one here" },
+                            { id: "inst-2", text: "Step two here" },
+                            { id: "inst-3", text: "Step three here" },
+                            ],
+                        }]
+                        });
+                        setModalStep("review");
+                    }}
+                    style={styles.addRowBtn}
+                    >
+                    Load test recipe
+                    </button>
             </div>
             )}
 
             {modalStep === "review" && parsedRecipe.versions[0] && (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-
+                {/* {console.log("instructions:", parsedRecipe.versions[0].instructions)} */}
                 <p style={styles.inputLabel}>Recipe Name</p>
                 <div style={{ position: "relative", display: "flex", gap: "8px" }}>
                 <button
@@ -276,59 +429,56 @@ export default function AddRecipeModal({ onClose, onSave, styles }) {
                 </button>
 
                 <p style={styles.inputLabel}>Instructions</p>
-                {parsedRecipe.versions[0].instructions.map((instruction, i) => (
-                    <div key={i} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                    <span style={{ paddingTop: "10px", fontSize: "13px", color: "#9ca3af", minWidth: "20px" }}>
-                        {i + 1}.
-                    </span>
-                    <textarea
-                        style={{
-                        ...styles.input,
-                        resize: "none",
-                        overflow: "hidden",
-                        minHeight: "120px",
-                        flex: 1,
-                        }}
-                        value={instruction}
-                        onChange={e => {
-                        e.target.style.height = "auto";
-                        e.target.style.height = e.target.scrollHeight + "px";
-                        const updated = [...parsedRecipe.versions[0].instructions];
-                        updated[i] = e.target.value;
-                        setParsedRecipe({
-                            ...parsedRecipe,
-                            versions: [{ ...parsedRecipe.versions[0], instructions: updated }]
-                        });
-                        }}
-                    />
-                    <button
-                        onMouseDown={e => e.preventDefault()}
-                        onClick={() => {
-                        const updated = parsedRecipe.versions[0].instructions.filter((_, idx) => idx !== i);
-                        setParsedRecipe({
-                            ...parsedRecipe,
-                            versions: [{ ...parsedRecipe.versions[0], instructions: updated }]
-                        });
-                        }}
-                        style={{
-                        background: "none", border: "none", cursor: "pointer",
-                        color: "#9ca3af", fontSize: "18px",
-                        padding: "12px", minWidth: "44px", minHeight: "44px",
-                        touchAction: "manipulation",
-                        }}
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleInstructionDragEnd}
                     >
-                        ✕
-                    </button>
-                    </div>
-                ))}
+                    <SortableContext
+                        items={parsedRecipe.versions[0].instructions.map(inst => inst.id)}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        {parsedRecipe.versions[0].instructions.map((instruction, i) => (
+                        <SortableInstruction
+                            key={instruction.id}
+                            id={instruction.id}
+                            instruction={instruction.text || ""}
+                            index={i}
+                            styles={styles}
+                            isMobile={isMobile}
+                            onChange={value => {
+                                const updated = parsedRecipe.versions[0].instructions.map(inst =>
+                                    inst.id === instruction.id ? { ...inst, text: value } : inst
+                                );
+                                setParsedRecipe({
+                                    ...parsedRecipe,
+                                    versions: [{ ...parsedRecipe.versions[0], instructions: updated }]
+                                });
+                                }}
+                                onDelete={() => {
+                                const updated = parsedRecipe.versions[0].instructions.filter(inst => inst.id !== instruction.id);
+                                setParsedRecipe({
+                                    ...parsedRecipe,
+                                    versions: [{ ...parsedRecipe.versions[0], instructions: updated }]
+                                });
+                                }}
+                        />
+                        ))}
+                    </SortableContext>  
+                </DndContext>
                 <button
                         onMouseDown={e => e.preventDefault()}
                 style={styles.addRowBtn}
-                onClick={() => 
-                    setParsedRecipe({
+                onClick={() => setParsedRecipe({
                     ...parsedRecipe,
-                    versions: [{...parsedRecipe.versions[0], instructions: ""}]
-                })}
+                    versions: [{
+                        ...parsedRecipe.versions[0],
+                        instructions: [
+                        ...parsedRecipe.versions[0].instructions,
+                        { id: `inst-${Date.now()}`, text: "" }  // ← object not string
+                        ]
+                    }]
+                    })}
                 >
                 + Add step
                 </button>

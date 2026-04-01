@@ -107,7 +107,7 @@ class RecipeParser:
 
 # Run
 if __name__ == "__main__":
-    url = "https://www.justonecookbook.com/classic-mentaiko-pasta/"
+    url = "https://www.mamaknowsglutenfree.com/gluten-free-chicken-parmesan/"
     parser = RecipeParser(url)
     result = parser.parse()
     print(result)
