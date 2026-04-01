@@ -1,21 +1,132 @@
 import { useState } from "react";
-// import { useRecipes } from "../hooks/useRecipes";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
 const isMobile = window.innerWidth <= 768;
 
-export default function EditRecipeModal({ rcp, rcpIndex,  onSave, onClose, styles }) {
-// const {recipes, setRecipes} = useRecipes();
-const [activeVersionId, setActiveVersionId] = useState(rcp.versions[0].id);
-const [editingRecipe, setEditingRecipe] = useState(rcp);    
-const activeVersion = editingRecipe?.versions.find(v => v.id === activeVersionId);
-if (!editingRecipe) return null;   
+function SortableInstruction({ id, instruction, index, onChange, onDelete, styles }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={{ ...style, display: "flex", gap: "8px", alignItems: "stretch" }}>
+      <div
+        {...attributes}
+        {...listeners}
+        style={{
+          width: "32px",
+          flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          paddingTop: "14px",
+          cursor: isDragging ? "grabbing" : "grab",
+          touchAction: "none",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          WebkitTouchCallout: "none",
+          WebkitTapHighlightColor: "transparent",
+          background: isDragging ? "#f3f4f6" : "transparent",
+          borderRadius: "6px",
+        }}
+      >
+        <span style={{ fontSize: "13px", color: "#9ca3af" }}>{index + 1}.</span>
+      </div>
+
+      <textarea
+        style={{
+          ...styles.input,
+          resize: "none",
+          overflow: "hidden",
+          minHeight: isMobile ? "100px" : "60px",
+          flex: 1,
+        }}
+        value={typeof instruction === "object" ? instruction.text || "" : instruction}
+        onChange={e => {
+          e.target.style.height = "auto";
+          e.target.style.height = e.target.scrollHeight + "px";
+          onChange(e.target.value);
+        }}
+      />
+
+      <button
+        onMouseDown={e => e.preventDefault()}
+        onClick={onDelete}
+        style={{
+          background: "none", border: "none", cursor: "pointer",
+          color: "#9ca3af", fontSize: "18px",
+          padding: "12px", minWidth: "44px", minHeight: "44px",
+          touchAction: "manipulation",
+          alignSelf: "flex-start",
+        }}
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
+export default function EditRecipeModal({ rcp, rcpIndex, onSave, onClose, styles }) {
+  const [activeVersionId, setActiveVersionId] = useState(rcp.versions[0].id);
+  const [editingRecipe, setEditingRecipe] = useState(() => {
+    // Convert plain string instructions to {id, text} objects
+    return {
+      ...rcp,
+      versions: rcp.versions.map(v => ({
+        ...v,
+        instructions: v.instructions.map((inst, i) =>
+          typeof inst === "string"
+            ? { id: `inst-${v.id}-${i}`, text: inst }
+            : inst
+        ),
+      }))
+    };
+  });
+
+  const activeVersion = editingRecipe?.versions.find(v => v.id === activeVersionId);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  if (!editingRecipe) return null;
 
   const saveEdit = () => {
-    onSave(editingRecipe, rcpIndex); // ← pass up to parent
+    // Convert {id, text} back to plain strings before saving
+    const finalRecipe = {
+      ...editingRecipe,
+      versions: editingRecipe.versions.map(v => ({
+        ...v,
+        instructions: v.instructions.map(inst =>
+          typeof inst === "object" ? inst.text : inst
+        ),
+      }))
+    };
+    onSave(finalRecipe, rcpIndex);
   };
 
-  const closeEdit = () => {
-    onClose(); // ← call parent's close
-  };
+  const closeEdit = () => onClose();
 
   const updateActiveVersion = (changes) => {
     setEditingRecipe(prev => ({
@@ -26,12 +137,25 @@ if (!editingRecipe) return null;
     }));
   };
 
+  const handleInstructionDragEnd = (event) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      const instructions = activeVersion.instructions;
+      const oldIndex = instructions.findIndex(inst => inst.id === active.id);
+      const newIndex = instructions.findIndex(inst => inst.id === over.id);
+      updateActiveVersion({ instructions: arrayMove(instructions, oldIndex, newIndex) });
+    }
+  };
+
   const addVersion = () => {
     const newVersion = {
       id: Date.now(),
       tab_name: "New Version",
       ingredients: JSON.parse(JSON.stringify(activeVersion.ingredients)),
-      instructions: [...activeVersion.instructions],
+      instructions: activeVersion.instructions.map((inst, i) => ({
+        id: `inst-${Date.now()}-${i}`,
+        text: typeof inst === "object" ? inst.text : inst,
+      })),
     };
     setEditingRecipe(prev => ({
       ...prev,
@@ -39,8 +163,9 @@ if (!editingRecipe) return null;
     }));
     setActiveVersionId(newVersion.id);
   };
-const deleteVersion = (id) => {
-    if (editingRecipe.versions.length === 1) return; // keep at least one
+
+  const deleteVersion = (id) => {
+    if (editingRecipe.versions.length === 1) return;
     setEditingRecipe(prev => ({
       ...prev,
       versions: prev.versions.filter(v => v.id !== id)
@@ -48,207 +173,197 @@ const deleteVersion = (id) => {
     setActiveVersionId(editingRecipe.versions[0].id);
   };
 
-    return (
-        <div style={styles.overlay} onClick={closeEdit}>
-        <div style={styles.modal} onClick={e => e.stopPropagation()}>
+  return (
+    <div style={styles.overlay} onClick={closeEdit}>
+    <div style={styles.modal} onClick={e => e.stopPropagation()}>
 
-            {/* Header */}
-            <div style={styles.modalHeader}>
-              <h3 style={styles.modalTitle}>Edit — {editingRecipe.name}</h3>
-              <button style={styles.closeBtn} onClick={closeEdit}>✕</button>
-            </div>
+      {/* Header */}
+      <div style={styles.modalHeader}>
+        <h3 style={styles.modalTitle}>Edit — {editingRecipe.name}</h3>
+        <button style={styles.closeBtn} onClick={closeEdit}>✕</button>
+      </div>
 
-            {/* Version tabs */}
-            <div style={{ ...styles.tabs, padding: "0 24px", display: "flex", alignItems: "center" }}>
-              {editingRecipe.versions.map(v => (
-                <div key={v.id} style={{ display: "flex", alignItems: "center" }}>
-                  <button
-                    style={{ ...styles.tab, ...(v.id === activeVersionId ? styles.tabActive : {}) }}
-                    onClick={() => setActiveVersionId(v.id)}
-                  >
-                    {v.tab_name}
-                  </button>
-                  {editingRecipe.versions.length > 1 && (
-                    <button
-                      onClick={() => deleteVersion(v.id)}
-                      style={{ background: "none", border: "none", color: "#d1d5db", cursor: "pointer", fontSize: "11px", padding: "0 4px" }}
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
+      {/* Version tabs */}
+      <div style={{ ...styles.tabs, padding: "0 24px", display: "flex", alignItems: "center" }}>
+        {editingRecipe.versions.map(v => (
+          <div key={v.id} style={{ display: "flex", alignItems: "center" }}>
+            <button
+              style={{ ...styles.tab, ...(v.id === activeVersionId ? styles.tabActive : {}) }}
+              onClick={() => setActiveVersionId(v.id)}
+            >
+              {v.tab_name}
+            </button>
+            {editingRecipe.versions.length > 1 && (
               <button
-                style={{ ...styles.tab, color: "#9ca3af" }}
-                onClick={addVersion}
+                onClick={() => deleteVersion(v.id)}
+                style={{ background: "none", border: "none", color: "#d1d5db", cursor: "pointer", fontSize: "11px", padding: "0 4px" }}
               >
-                + Add version
+                ✕
               </button>
-            </div>
-
-            <div style={styles.modalBody}>
-
-              {/* Tab name */}
-              <div style={{ marginBottom: "16px" }}>
-                <p style={styles.inputLabel}>Tab name</p>
-                <input
-                  style={styles.input}
-                  value={activeVersion.tab_name}
-                  onChange={e => updateActiveVersion({ tab_name: e.target.value })}
-                />
-              </div>
-
-              {/* Ingredients */}
-              <p style={styles.inputLabel}>Ingredients</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "8px" }}>
-                {activeVersion.ingredients.map((ing, i) => (
-                  <div key={i} style={{ 
-                    display: "flex", 
-                    flexDirection: isMobile ? "column" : "row",
-                    gap: "8px",
-                    padding: isMobile ? "12px 0" : "0",
-                    borderBottom: isMobile ? "1px solid #f3f4f6" : "none",
-                  }}>
-                    {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Amount</p>}
-                    <input
-                      style={{ ...styles.input, width: isMobile ? "100%" : "80px" }}
-                      placeholder="amt"
-                      value={ing.amount || ""}
-                      onChange={e => {
-                        const updated = [...activeVersion.ingredients];
-                        updated[i] = { ...updated[i], amount: e.target.value };
-                        updateActiveVersion({ ingredients: updated });
-                      }}
-                    />
-                    {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Unit</p>}
-                    <input
-                      style={{ ...styles.input, width: isMobile ? "100%" : "80px" }}
-                      placeholder="unit"
-                      value={ing.unit || ""}
-                      onChange={e => {
-                        const updated = [...activeVersion.ingredients];
-                        updated[i] = { ...updated[i], unit: e.target.value };
-                        updateActiveVersion({ ingredients: updated });
-                      }}
-                    />
-                    {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Ingredient</p>}
-                    <input
-                      style={{ ...styles.input, flex: 1 }}
-                      placeholder="ingredient"
-                      value={ing.item || ""}
-                      onChange={e => {
-                        const updated = [...activeVersion.ingredients];
-                        updated[i] = { ...updated[i], item: e.target.value };
-                        updateActiveVersion({ ingredients: updated });
-                      }}
-                    />
-                    <button
-                      onClick={() => {
-                        const updated = activeVersion.ingredients.filter((_, idx) => idx !== i);
-                        updateActiveVersion({ ingredients: updated });
-                      }}
-                      style={{
-                        background: "none", border: "none", cursor: "pointer",
-                        color: "#9ca3af", fontSize: "18px",
-                        padding: "12px", minWidth: "44px", minHeight: "44px",
-                        touchAction: "manipulation",
-                        alignSelf: isMobile ? "flex-end" : "center",
-                      }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <button
-                style={styles.addRowBtn}
-                onClick={() => updateActiveVersion({
-                  ingredients: [...activeVersion.ingredients, { amount: "", unit: "", item: "" }]
-                })}
-              >
-                + Add ingredient
-              </button>
-
-              {/* Instructions */}
-              <p style={{ ...styles.inputLabel, marginTop: "20px" }}>Instructions</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "8px" }}>
-                {activeVersion.instructions.map((instruction, i) => (
-                  <div key={i} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                    <span style={{ paddingTop: "10px", fontSize: "13px", color: "#9ca3af", minWidth: "20px" }}>
-                      {i + 1}.
-                    </span>
-                    <textarea
-                      style={{
-                        ...styles.input,
-                        resize: "none",
-                        overflow: "hidden",
-                        minHeight: isMobile ? "100px" : "60px",
-                        flex: 1,
-                      }}
-                      value={instruction}
-                      onChange={e => {
-                        e.target.style.height = "auto";
-                        e.target.style.height = e.target.scrollHeight + "px";
-                        const updated = [...activeVersion.instructions];
-                        updated[i] = e.target.value;
-                        updateActiveVersion({ instructions: updated });
-                      }}
-                    />
-                    <button
-                      onClick={() => {
-                        const updated = activeVersion.instructions.filter((_, idx) => idx !== i);
-                        updateActiveVersion({ instructions: updated });
-                      }}
-                      style={{
-                        background: "none", border: "none", cursor: "pointer",
-                        color: "#9ca3af", fontSize: "18px",
-                        padding: "12px", minWidth: "44px", minHeight: "44px",
-                        touchAction: "manipulation",
-                      }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <button
-                style={styles.addRowBtn}
-                onClick={() => updateActiveVersion({
-                  instructions: [...activeVersion.instructions, ""]
-                })}
-              >
-                + Add step
-              </button>
-            
-              {/* Save */}
-              <div style={{
-                    position: "sticky",
-                    bottom: 0,
-                    background: "#fff",
-                    padding: "12px 24px",
-                    borderTop: "1px solid #e5e7eb",
-                    display: "flex",
-                    gap: "10px",
-                    marginTop: "24px",
-                    }}>
-                <button
-                  style={{ ...styles.submitBtn, background: "#f3f4f6", color: "#111827", marginTop: 0 }}
-                  onMouseDown={e => e.preventDefault()}
-                  onClick={closeEdit}
-                >
-                  Cancel
-                </button>
-                <button
-                  style={{ ...styles.submitBtn, marginTop: 0 }}
-                  onMouseDown={e => e.preventDefault()}
-                  onClick={saveEdit}
-                >
-                  Save Changes
-                </button>
-              </div>
-
-            </div>
+            )}
           </div>
+        ))}
+        <button style={{ ...styles.tab, color: "#9ca3af" }} onClick={addVersion}>
+          + Add version
+        </button>
+      </div>
+
+      <div style={styles.modalBody}>
+
+        {/* Tab name */}
+        <div style={{ marginBottom: "16px" }}>
+          <p style={styles.inputLabel}>Tab name</p>
+          <input
+            style={styles.input}
+            value={activeVersion.tab_name}
+            onChange={e => updateActiveVersion({ tab_name: e.target.value })}
+          />
         </div>
-    )
-};
+
+        {/* Ingredients */}
+        <p style={styles.inputLabel}>Ingredients</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "8px" }}>
+          {activeVersion.ingredients.map((ing, i) => (
+            <div key={i} style={{
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              gap: "8px",
+              padding: isMobile ? "12px 0" : "0",
+              borderBottom: isMobile ? "1px solid #f3f4f6" : "none",
+            }}>
+              {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Amount</p>}
+              <input
+                style={{ ...styles.input, width: isMobile ? "100%" : "80px" }}
+                placeholder="amt"
+                value={ing.amount || ""}
+                onChange={e => {
+                  const updated = [...activeVersion.ingredients];
+                  updated[i] = { ...updated[i], amount: e.target.value };
+                  updateActiveVersion({ ingredients: updated });
+                }}
+              />
+              {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Unit</p>}
+              <input
+                style={{ ...styles.input, width: isMobile ? "100%" : "80px" }}
+                placeholder="unit"
+                value={ing.unit || ""}
+                onChange={e => {
+                  const updated = [...activeVersion.ingredients];
+                  updated[i] = { ...updated[i], unit: e.target.value };
+                  updateActiveVersion({ ingredients: updated });
+                }}
+              />
+              {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Ingredient</p>}
+              <input
+                style={{ ...styles.input, flex: 1 }}
+                placeholder="ingredient"
+                value={ing.item || ""}
+                onChange={e => {
+                  const updated = [...activeVersion.ingredients];
+                  updated[i] = { ...updated[i], item: e.target.value };
+                  updateActiveVersion({ ingredients: updated });
+                }}
+              />
+              <button
+                onMouseDown={e => e.preventDefault()}
+                onClick={() => {
+                  const updated = activeVersion.ingredients.filter((_, idx) => idx !== i);
+                  updateActiveVersion({ ingredients: updated });
+                }}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "#9ca3af", fontSize: "18px",
+                  padding: "12px", minWidth: "44px", minHeight: "44px",
+                  touchAction: "manipulation",
+                  alignSelf: isMobile ? "flex-end" : "center",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          style={styles.addRowBtn}
+          onMouseDown={e => e.preventDefault()}
+          onClick={() => updateActiveVersion({
+            ingredients: [...activeVersion.ingredients, { amount: "", unit: "", item: "" }]
+          })}
+        >
+          + Add ingredient
+        </button>
+
+        {/* Instructions */}
+        <p style={{ ...styles.inputLabel, marginTop: "20px" }}>Instructions</p>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleInstructionDragEnd}
+        >
+          <SortableContext
+            items={activeVersion.instructions.map(inst => inst.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {activeVersion.instructions.map((instruction, i) => (
+              <SortableInstruction
+                key={instruction.id}
+                id={instruction.id}
+                instruction={instruction}
+                index={i}
+                styles={styles}
+                isMobile={isMobile}
+                onChange={value => {
+                  const updated = activeVersion.instructions.map(inst =>
+                    inst.id === instruction.id ? { ...inst, text: value } : inst
+                  );
+                  updateActiveVersion({ instructions: updated });
+                }}
+                onDelete={() => {
+                  const updated = activeVersion.instructions.filter(inst => inst.id !== instruction.id);
+                  updateActiveVersion({ instructions: updated });
+                }}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+        <button
+          style={styles.addRowBtn}
+          onMouseDown={e => e.preventDefault()}
+          onClick={() => updateActiveVersion({
+            instructions: [
+              ...activeVersion.instructions,
+              { id: `inst-${Date.now()}`, text: "" }
+            ]
+          })}
+        >
+          + Add step
+        </button>
+
+        {/* Save */}
+        <div style={{
+          position: "sticky", bottom: 0,
+          background: "#fff", padding: "12px 24px",
+          borderTop: "1px solid #e5e7eb",
+          display: "flex", gap: "10px", marginTop: "24px",
+        }}>
+          <button
+            style={{ ...styles.submitBtn, background: "#f3f4f6", color: "#111827", marginTop: 0 }}
+            onMouseDown={e => e.preventDefault()}
+            onClick={closeEdit}
+          >
+            Cancel
+          </button>
+          <button
+            style={{ ...styles.submitBtn, marginTop: 0 }}
+            onMouseDown={e => e.preventDefault()}
+            onClick={saveEdit}
+          >
+            Save Changes
+          </button>
+        </div>
+
+      </div>
+    </div>
+    </div>
+  );
+}
