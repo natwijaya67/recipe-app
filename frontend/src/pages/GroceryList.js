@@ -67,8 +67,7 @@ export default function GroceryList() {
   }),
   useSensor(TouchSensor, {
     activationConstraint: {
-      delay: 150,
-      tolerance: 5,
+      distance: 5,
     },
   })
 );
@@ -231,9 +230,20 @@ const styles = {
   item: {
     display: "flex", alignItems: "center", gap: "10px",
     padding: "12px 14px", border: "1px solid #e5e7eb",
-    borderRadius: "8px", cursor: "grab", transition: "background 0.15s",
+    borderRadius: "8px", cursor: "grab", transition: "background 0.15s", WebkitUserSelect: "none",
+  userSelect: "none",
   },
-  dragHandle: { color: "#d1d5db", fontSize: "16px", cursor: "grab", userSelect: "none" },
+  dragHandle: { 
+    color: "#d1d5db", 
+    fontSize: "16px", 
+    cursor: "grab", 
+    userSelect: "none",
+    touchAction: "none",
+    padding: "8px",
+    WebkitUserSelect: "none",    
+    WebkitTouchCallout: "none",    
+    WebkitTapHighlightColor: "transparent",
+  },
   checkbox: { width: "16px", height: "16px", cursor: "pointer", flexShrink: 0 },
   itemText: { flex: 1, fontSize: "14px", outline: "none",cursor: "text", },
   deleteBtn: {
