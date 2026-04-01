@@ -1,4 +1,58 @@
 import { useState, useEffect } from "react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+function SortableItem({ item, onToggle, onDelete, onEdit }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={{ ...styles.item, ...style, background: item.checked ? "#f9fafb" : "#fff" }}>
+      <span {...attributes} {...listeners} style={styles.dragHandle}>⠿</span>
+      <input
+        type="checkbox"
+        checked={item.checked}
+        onChange={() => onToggle(item.id)}
+        style={styles.checkbox}
+      />
+      <span
+        contentEditable
+        suppressContentEditableWarning
+        onDragStart={e => e.stopPropagation()}
+        onBlur={e => onEdit(item.id, e.target.innerText)}
+        style={{
+          ...styles.itemText,
+          textDecoration: item.checked ? "line-through" : "none",
+          color: item.checked ? "#9ca3af" : "#111827",
+          outline: "none",
+          cursor: "text",
+        }}
+      >
+        {item.text}
+      </span>
+      <button style={styles.deleteBtn} onClick={() => onDelete(item.id)}>✕</button>
+    </div>
+  );
+}
 
 export default function GroceryList() {
   const [items, setItems] = useState(() => {
@@ -6,7 +60,35 @@ export default function GroceryList() {
     return saved ? JSON.parse(saved) : [];
   });
   const [inputValue, setInputValue] = useState("");
-  const [dragIndex, setDragIndex] = useState(null);
+  // const [dragIndex, setDragIndex] = useState(null);
+  const sensors = useSensors(
+  useSensor(PointerSensor, {
+    activationConstraint: { distance: 5 },
+  }),
+  useSensor(TouchSensor, {
+    activationConstraint: {
+      delay: 150,
+      tolerance: 5,
+    },
+  })
+);
+
+const editItem = (id, text) => {
+  setItems(prev => prev.map(item =>
+    item.id === id ? { ...item, text } : item
+  ));
+};
+
+const handleDragEnd = (event) => {
+  const { active, over } = event;
+  if (active.id !== over?.id) {
+    setItems(prev => {
+      const oldIndex = prev.findIndex(i => i.id === active.id);
+      const newIndex = prev.findIndex(i => i.id === over.id);
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  }
+};
 
   // Save to localStorage on change
   useEffect(() => {
@@ -53,21 +135,6 @@ export default function GroceryList() {
     setItems(prev => prev.filter(item => !item.checked));
   };
 
-  // Drag handlers
-  const handleDragStart = (i) => setDragIndex(i);
-
-  const handleDragOver = (e, i) => {
-    e.preventDefault();
-    if (dragIndex === null || dragIndex === i) return;
-    const updated = [...items];
-    const dragged = updated.splice(dragIndex, 1)[0];
-    updated.splice(i, 0, dragged);
-    setDragIndex(i);
-    setItems(updated);
-  };
-
-  const handleDragEnd = () => setDragIndex(null);
-
   const checkedCount = items.filter(i => i.checked).length;
 
   return (
@@ -111,73 +178,24 @@ export default function GroceryList() {
       </div>
 
       {/* List */}
-      <div style={styles.list}>
-        {items.length === 0 && (
-          <p style={styles.empty}>No items yet — add something above.</p>
-        )}
-        {items.map((item, i) => (
-          <div
-            key={item.id}
-            draggable
-            onDragStart={() => handleDragStart(i)}
-            // draggable={dragIndex === i}
-            onDragOver={e => handleDragOver(e, i)}
-            onDragEnd={handleDragEnd}
-            style={{
-              ...styles.item,
-              opacity: dragIndex === i ? 0.5 : 1,
-              background: item.checked ? "#f9fafb" : "#fff",
-            }}
-          >
-            {/* Drag handle */}
-            <span
-                style={styles.dragHandle}
-                // onMouseDown={() => setDragIndex(i)}
-                // onMouseUp={() => setDragIndex(null)}
-                // draggable
-                // onDragStart={() => handleDragStart(i)}
-            >
-            ⠿
-            </span>
-
-            {/* Checkbox */}
-            <input
-              type="checkbox"
-              checked={item.checked}
-              onChange={() => toggleCheck(item.id)}
-              style={styles.checkbox}
-            />
-
-            {/* Text */}
-            <span 
-                contentEditable
-                suppressContentEditableWarning
-                onMouseDown={e => e.currentTarget.closest('[draggable]').setAttribute('draggable', false)}
-                onDragStart={e => e.stopPropagation()}
-                onBlur={e => {
-                    const updated = items.map(i =>
-                    i.id === item.id ? { ...i, text: e.target.innerText } : i
-                    );
-                    setItems(updated);
-                }}
-                style={{
-                ...styles.itemText,
-                textDecoration: item.checked ? "line-through" : "none",
-                color: item.checked ? "#111827" : "#111827",
-            }}>
-              {item.text}
-            </span>
-
-            {/* Delete */}
-            <button
-              style={styles.deleteBtn}
-              onClick={() => deleteItem(item.id)}
-            >
-              ✕
-            </button>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+          <div style={styles.list}>
+            {items.length === 0 && (
+              <p style={styles.empty}>No items yet — add something above.</p>
+            )}
+            {items.map(item => (
+              <SortableItem
+                key={item.id}
+                item={item}
+                onToggle={toggleCheck}
+                onDelete={deleteItem}
+                onEdit={editItem}
+              />
+            ))}
           </div>
-        ))}
-      </div>
+        </SortableContext>
+      </DndContext>
 
     </div>
   );
