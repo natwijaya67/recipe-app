@@ -98,7 +98,7 @@ export default function RecipePopup({ recipe, onClose, onEdit, onAddToGroceries,
               <div style={styles.section}>
                 <p style={styles.sectionTitle}>Instructions</p>
                 {activeVersion.instructions.map((step, i) => (
-                  <p key={i} style={styles.step}>{i + 1}. {step.text}</p>
+                  <p key={i} style={styles.step}>{i + 1}. {step}</p>
                 ))}
               </div>
             </>

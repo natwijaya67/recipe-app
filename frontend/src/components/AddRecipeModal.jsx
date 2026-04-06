@@ -225,7 +225,7 @@ const handleAddFromUrl = async () => {
                 <button
                     onClick={() => {
                         setParsedRecipe({
-                        url: "https://test.com",
+                        url: "",
                         name: "Test Recipe",
                         image: null,
                         servings: null,
@@ -247,7 +247,7 @@ const handleAddFromUrl = async () => {
                     }}
                     style={styles.addRowBtn}
                     >
-                    Load test recipe
+                    Add Manual recipe
                     </button>
             </div>
             )}
