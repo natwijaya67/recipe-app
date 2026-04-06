@@ -14,6 +14,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import TagInput from "./TagInput";
 
 const isMobile = window.innerWidth <= 768;
 
@@ -182,6 +183,16 @@ export default function EditRecipeModal({ rcp, rcpIndex, onSave, onClose, styles
         <h3 style={styles.modalTitle}>Edit — {editingRecipe.name}</h3>
         <button style={styles.closeBtn} onClick={closeEdit}>✕</button>
       </div>
+      <div style={{ padding: "12px 24px", borderBottom: "1px solid #e5e7eb" }}>
+        <p style={styles.inputLabel}>Tags</p>
+            <TagInput
+            tags={editingRecipe.tags || []}
+            onChange={tags => setEditingRecipe({ ...editingRecipe, tags })}
+            styles={styles}
+            />
+      </div>
+
+      
 
       {/* Version tabs */}
       <div style={{ ...styles.tabs, padding: "0 24px", display: "flex", alignItems: "center" }}>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { scaleAmount } from "../utils/scaleAmount";
+import { TagChip } from "./TagInput";
 
 export default function RecipePopup({ recipe, onClose, onEdit, onAddToGroceries, styles }) {
   const [activeVersionId, setActiveVersionId] = useState(recipe.versions[0].id);
@@ -37,6 +38,13 @@ export default function RecipePopup({ recipe, onClose, onEdit, onAddToGroceries,
               {" · "}
               {recipe.versions?.[0]?.ingredients?.length || 0} ingredients
             </p>
+            {recipe.tags?.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                  {recipe.tags.map(tag => (
+                    <TagChip key={tag} tag={tag} />
+                  ))}
+                </div>
+              )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <button
@@ -90,7 +98,7 @@ export default function RecipePopup({ recipe, onClose, onEdit, onAddToGroceries,
               <div style={styles.section}>
                 <p style={styles.sectionTitle}>Instructions</p>
                 {activeVersion.instructions.map((step, i) => (
-                  <p key={i} style={styles.step}>{i + 1}. {step}</p>
+                  <p key={i} style={styles.step}>{i + 1}. {step.text}</p>
                 ))}
               </div>
             </>

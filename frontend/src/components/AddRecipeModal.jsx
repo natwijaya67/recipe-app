@@ -15,6 +15,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import TagInput from "./TagInput";
 
 const isMobile = window.innerWidth <= 768;
 
@@ -114,6 +115,7 @@ const handleAddFromUrl = async () => {
       image: parsed.image,
       servings: parsed.servings,
       total_time: parsed.total_time,
+      tags: [],
       versions: [{
         id: Date.now(),
         tab_name: "Original",
@@ -324,26 +326,33 @@ const handleAddFromUrl = async () => {
             </div>
 
                 {parsedRecipe.total_time && (
-                <>
-                    <p style={styles.inputLabel}>Total Time (mins)</p>
+                <p>
+                    <p style={styles.inputLabel}>Total Time (mins) </p>
                     <input
                     style={styles.input}
                     value={parsedRecipe.total_time}
                     onChange={e => setParsedRecipe({ ...parsedRecipe, total_time: e.target.value })}
                     />
-                </>
+                </p>
                 )}
 
                 {parsedRecipe.servings && (
-                <>
+                <p>
                     <p style={styles.inputLabel}>Servings</p>
                     <input
                     style={styles.input}
                     value={parsedRecipe.servings}
                     onChange={e => setParsedRecipe({ ...parsedRecipe, servings: e.target.value })}
                     />
-                </>
+                </p>
                 )}
+
+                <p style={styles.inputLabel}>Tags</p>
+                    <TagInput
+                    tags={parsedRecipe.tags || []}
+                    onChange={tags => setParsedRecipe({ ...parsedRecipe, tags })}
+                    styles={styles}
+                    />
 
                 <p style={styles.inputLabel}>Ingredients</p>
                 {parsedRecipe.versions[0].ingredients.map((ing, i) => (

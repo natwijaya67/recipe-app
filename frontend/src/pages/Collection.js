@@ -3,6 +3,7 @@ import { useRecipes } from "../hooks/useRecipes";
 import RecipePopup from "../components/RecipePopup";
 import AddRecipeModal from "../components/AddRecipeModal";
 import EditRecipeModal from "../components/EditRecipeModal";
+import { TagChip } from "../components/TagInput";
 
 const isMobile = window.innerWidth <= 768;
 
@@ -74,6 +75,11 @@ export default function Collection() {
                 {recipe.total_time && `${recipe.total_time} mins · `}
                 {recipe.versions?.[0]?.ingredients?.length || 0} ingredients
               </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "8px" }}>
+                  {recipe.tags?.map(tag => (
+                  <TagChip key={tag} tag={tag} />
+                ))}
+              </div>
             </div>
           </div>
         ))}
