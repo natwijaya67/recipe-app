@@ -27,15 +27,23 @@ export default function Collection() {
   };
 
   const deleteCard = (e, i) => {
-    e.stopPropagation(); // prevent opening the popup
+    e.stopPropagation(); 
     setRecipes(prev => prev.filter((_, idx) => idx !== i));
   };
-
   const openEdit = (e, recipe, i) => {
     e.stopPropagation();
-    setEditingRecipe(JSON.parse(JSON.stringify(recipe))); // deep copy
+    setEditingRecipe(JSON.parse(JSON.stringify(recipe))); 
     setEditingRecipeIndex(i);
   };
+  const [activeTags, setActiveTags] = useState([]);
+  const allTags = [...new Set(recipes.flatMap(r => r.tags || []))];
+  const filteredRecipes = activeTags.length === 0
+  ? recipes
+  : recipes.filter(r =>
+      activeTags.some(tag => r.tags?.includes(tag))  
+    );
+
+
 
   return (
     <div style={styles.page}>
@@ -44,16 +52,67 @@ export default function Collection() {
       <div style={styles.header}>
         <div>
           <h2 style={styles.title}>My Collection</h2>
-          <p style={styles.count}>{recipes.length} recipes</p>
+          <p style={styles.count}>
+            {filteredRecipes.length === recipes.length
+              ? `${recipes.length} recipes`
+              : `${filteredRecipes.length} of ${recipes.length} recipes`}
+          </p>
         </div>
         <button style={styles.addBtn} onClick={() => setShowAddModal(true)}>
           + Add Recipe
         </button>
       </div>
 
+      {allTags.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "20px" }}>
+          {allTags.map(tag => {
+            const isActive = activeTags.includes(tag);
+            return (
+              <button
+                key={tag}
+                onClick={() => {
+                  setActiveTags(prev =>
+                    isActive ? prev.filter(t => t !== tag) : [...prev, tag]
+                  );
+                }}
+                style={{
+                  padding: "5px 12px",
+                  borderRadius: "20px",
+                  border: `1px solid ${isActive ? "#122711" : "#e5e7eb"}`,
+                  background: isActive ? "#192711" : "#fff",
+                  color: isActive ? "#fff" : "#6b7280",
+                  fontSize: "12px",
+                  fontWeight: isActive ? "500" : "400",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+              >
+                {tag}
+              </button>
+            );
+          })}
+          {activeTags.length > 0 && (
+            <button
+              onClick={() => setActiveTags([])}
+              style={{
+                padding: "5px 12px",
+                borderRadius: "20px",
+                border: "1px solid #fca5a5",
+                background: "none",
+                color: "#dc2626",
+                fontSize: "12px",
+                cursor: "pointer",
+              }}
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Recipe Grid */}
       <div style={styles.grid}>
-        {recipes.map((recipe, i) => (
+        {filteredRecipes.map((recipe, i) => (
           <div
             key={i}
             style={{...styles.card, position: "relative"}}
