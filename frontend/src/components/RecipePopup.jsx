@@ -36,7 +36,9 @@ export default function RecipePopup({ recipe, onClose, onEdit, onAddToGroceries,
               />
               {recipe.servings && ` (original: ${recipe.servings})`}
               {" · "}
-              {recipe.versions?.[0]?.ingredients?.length || 0} ingredients
+              <span style={{ whiteSpace: "nowrap" }}>
+                {recipe.versions?.[0]?.ingredients?.length || 0} ingredients
+              </span>
             </p>
             {recipe.tags?.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
@@ -98,7 +100,7 @@ export default function RecipePopup({ recipe, onClose, onEdit, onAddToGroceries,
               <div style={styles.section}>
                 <p style={styles.sectionTitle}>Instructions</p>
                 {activeVersion.instructions.map((step, i) => (
-                  <p key={i} style={styles.step}>{i + 1}. {step}</p>
+                  <p key={i} style={styles.step}>{i + 1}. {typeof step === "object" ? step.text : step}</p>
                 ))}
               </div>
             </>

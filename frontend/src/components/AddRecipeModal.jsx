@@ -143,12 +143,18 @@ const handleAddFromUrl = async () => {
       return;
     }
     const finalRecipe = {
-      ...parsedRecipe,
-      name: selectedEmoji + (parsedRecipe.name || "")
+        ...parsedRecipe,
+        name: selectedEmoji + (parsedRecipe.name || ""),
+        versions: parsedRecipe.versions.map(v => ({
+        ...v,
+        instructions: v.instructions.map(inst =>
+            typeof inst === "object" ? inst.text : inst  // ← convert back to plain strings
+        ),
+        }))
     };
-    onSave(finalRecipe);
-    onClose();
-  };
+        onSave(finalRecipe);
+        onClose();
+    };
 
   const handleBack = () => {
     setModalStep("input");
