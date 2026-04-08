@@ -36,9 +36,7 @@ export default function RecipePopup({ recipe, onClose, onEdit, onAddToGroceries,
               />
               {recipe.servings && ` (original: ${recipe.servings})`}
               {" · "}
-              <span style={{ whiteSpace: "nowrap" }}>
-                {recipe.versions?.[0]?.ingredients?.length || 0} ingredients
-              </span>
+              {recipe.versions?.[0]?.ingredients?.length || 0} ingredients
             </p>
             {recipe.tags?.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
