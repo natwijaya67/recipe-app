@@ -93,21 +93,21 @@ export default function RecipePopup({ recipe, onClose, onEdit, onAddToGroceries 
               </span>
             </p>
             {recipe.tags?.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
-                  {recipe.tags.map(tag => (
-                    <TagChip key={tag} tag={tag} />
-                  ))}
-                </div>
-              )}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                {recipe.tags.map(tag => (
+                  <TagChip key={tag} tag={tag} />
+                ))}
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <button
-                style={styles.groceryBtn}
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => onAddToGroceries(recipe, activeVersion)}  // ← pass activeVersion
-                >
-                + Add to Grocery List
-                </button>
+              style={styles.groceryBtn}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => onAddToGroceries(recipe, activeVersion)}
+            >
+              + Grocery List
+            </button>
             <button
               style={styles.groceryBtn}
               onMouseDown={e => e.preventDefault()}
