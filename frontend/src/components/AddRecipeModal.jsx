@@ -19,7 +19,73 @@ import TagInput from "./TagInput";
 
 const isMobile = window.innerWidth <= 768;
 
-function SortableInstruction({ id, instruction, index, onChange, onDelete, styles, isMobile }) {
+const styles = {
+  overlay: {
+    position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+    display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
+  },
+  modal: {
+    background: "#fff",
+    borderRadius: isMobile ? "0" : "12px",
+    width: "100%",
+    maxWidth: isMobile ? "100%" : "480px",
+    margin: isMobile ? "0" : "0 16px",
+    height: isMobile ? "100%" : "auto",
+    maxHeight: isMobile ? "100%" : "85vh",
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
+    position: "relative",
+  },
+  modalHeader: {
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+    padding: "20px 24px", borderBottom: "1px solid #e5e7eb",
+  },
+  modalTitle: { fontSize: "16px", fontWeight: "500" },
+  closeBtn: {
+    background: "none", border: "none", fontSize: "18px",
+    cursor: "pointer", color: "#9ca3af", padding: "4px 8px",
+  },
+  tabs: {
+    display: "flex", borderBottom: "1px solid #e5e7eb", padding: "0 24px",
+  },
+  tab: {
+    padding: "12px 16px", background: "none", border: "none",
+    fontSize: "13px", color: "#9ca3af", cursor: "pointer",
+    borderBottom: "2px solid transparent", marginBottom: "-1px",
+  },
+  tabActive: { color: "#000", borderBottomColor: "#000", fontWeight: "bold" },
+  modalBody: {
+    padding: isMobile ? "16px" : "24px",
+    flex: 1,
+    overflowY: "auto",
+  },
+  inputLabel: { fontSize: "13px", fontWeight: "500", marginBottom: "6px", color: "#374151" },
+  input: {
+    width: "100%", padding: "10px 12px", border: "1px solid #e5e7eb",
+    borderRadius: "8px", fontSize: "16px", outline: "none",
+    fontFamily: "inherit", boxSizing: "border-box",
+  },
+  inputHint: { fontSize: "12px", color: "#9ca3af", marginTop: "4px" },
+  submitBtn: {
+    width: "100%", marginTop: "20px", padding: "10px",
+    background: "#111827", color: "#fff", border: "none",
+    borderRadius: "8px", fontSize: "14px", fontWeight: "500", cursor: "pointer",
+  },
+  addRowBtn: {
+    background: "none", border: "1px dashed #e5e7eb",
+    borderRadius: "8px", padding: "8px 14px",
+    fontSize: "13px", color: "#9ca3af", cursor: "pointer",
+    width: "100%", marginTop: "4px",
+  },
+  emojiBtn: {
+    padding: "8px 12px", background: "none",
+    border: "1px solid #e5e7eb", borderRadius: "8px",
+    cursor: "pointer", fontSize: "18px", flexShrink: 0,
+  },
+};
+
+function SortableInstruction({ id, instruction, index, onChange, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id });
 
@@ -92,7 +158,7 @@ function SortableInstruction({ id, instruction, index, onChange, onDelete, style
   );
 }
 
-export default function AddRecipeModal({ onClose, onSave, styles }) {
+export default function AddRecipeModal({ onClose, onSave }) {
   const [activeTab, setActiveTab] = useState("url");
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -357,7 +423,6 @@ const handleAddFromUrl = async () => {
                     <TagInput
                     tags={parsedRecipe.tags || []}
                     onChange={tags => setParsedRecipe({ ...parsedRecipe, tags })}
-                    styles={styles}
                     />
 
                 <p style={styles.inputLabel}>Ingredients</p>
@@ -459,8 +524,6 @@ const handleAddFromUrl = async () => {
                             id={instruction.id}
                             instruction={instruction.text || ""}
                             index={i}
-                            styles={styles}
-                            isMobile={isMobile}
                             onChange={value => {
                                 const updated = parsedRecipe.versions[0].instructions.map(inst =>
                                     inst.id === instruction.id ? { ...inst, text: value } : inst

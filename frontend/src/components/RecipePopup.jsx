@@ -2,7 +2,59 @@ import { useState } from "react";
 import { scaleAmount } from "../utils/scaleAmount";
 import { TagChip } from "./TagInput";
 
-export default function RecipePopup({ recipe, onClose, onEdit, onAddToGroceries, styles }) {
+const styles = {
+  overlay: {
+    position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+    display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
+  },
+  popup: {
+    background: "#fff", borderRadius: "12px", width: "100%",
+    maxWidth: "680px", maxHeight: "80vh", overflow: "hidden",
+    display: "flex", flexDirection: "column", margin: "0 16px",
+  },
+  popupHeader: {
+    display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+    padding: "24px 24px 16px", borderBottom: "1px solid #e5e7eb",
+  },
+  popupTitle: { fontSize: "20px", fontWeight: "500", marginBottom: "4px" },
+  popupMeta: { fontSize: "13px", color: "#9ca3af" },
+  groceryBtn: {
+    padding: "7px 14px", background: "#111827", color: "#fff",
+    border: "none", borderRadius: "8px", fontSize: "13px",
+    fontWeight: "500", cursor: "pointer",
+  },
+  closeBtn: {
+    background: "none", border: "none", fontSize: "18px",
+    cursor: "pointer", color: "#9ca3af", padding: "4px 8px",
+  },
+  tabs: {
+    display: "flex", borderBottom: "1px solid #e5e7eb", padding: "0 24px",
+  },
+  tab: {
+    padding: "12px 16px", background: "none", border: "none",
+    fontSize: "13px", color: "#9ca3af", cursor: "pointer",
+    borderBottom: "2px solid transparent", marginBottom: "-1px",
+  },
+  tabActive: { color: "#000", borderBottomColor: "#000", fontWeight: "bold" },
+  popupBody: {
+    overflowY: "auto", padding: "24px",
+    display: "flex", flexDirection: "column", gap: "28px",
+  },
+  section: {},
+  sectionTitle: {
+    fontSize: "11px", fontWeight: "600", letterSpacing: "0.08em",
+    textTransform: "uppercase", color: "#9ca3af", marginBottom: "12px",
+  },
+  ingredientRow: {
+    display: "flex", gap: "12px", padding: "8px 0",
+    borderBottom: "1px solid #f3f4f6", fontSize: "14px",
+  },
+  ingredientAmount: { minWidth: "80px", color: "#6b7280" },
+  ingredientItem: { color: "#111827" },
+  step: { fontSize: "14px", lineHeight: "1.7", color: "#374151", marginBottom: "12px" },
+};
+
+export default function RecipePopup({ recipe, onClose, onEdit, onAddToGroceries }) {
   const [activeVersionId, setActiveVersionId] = useState(recipe.versions[0].id);
   const [servingMultiplier, setServingMultiplier] = useState(1);
 

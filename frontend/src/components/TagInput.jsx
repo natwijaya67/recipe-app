@@ -53,7 +53,7 @@ export function TagChip({ tag, onRemove }) {
   );
 }
 
-export default function TagInput({ tags = [], onChange, styles }) {
+export default function TagInput({ tags = [], onChange }) {
   const [input, setInput] = useState("");
 
   const addTag = (value) => {

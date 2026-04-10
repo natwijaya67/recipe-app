@@ -18,7 +18,67 @@ import TagInput from "./TagInput";
 
 const isMobile = window.innerWidth <= 768;
 
-function SortableInstruction({ id, instruction, index, onChange, onDelete, styles }) {
+const styles = {
+  overlay: {
+    position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+    display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
+  },
+  modal: {
+    background: "#fff",
+    borderRadius: isMobile ? "0" : "12px",
+    width: "100%",
+    maxWidth: isMobile ? "100%" : "480px",
+    margin: isMobile ? "0" : "0 16px",
+    height: isMobile ? "100%" : "auto",
+    maxHeight: isMobile ? "100%" : "85vh",
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
+    position: "relative",
+  },
+  modalHeader: {
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+    padding: "20px 24px", borderBottom: "1px solid #e5e7eb",
+  },
+  modalTitle: { fontSize: "16px", fontWeight: "500" },
+  closeBtn: {
+    background: "none", border: "none", fontSize: "18px",
+    cursor: "pointer", color: "#9ca3af", padding: "4px 8px",
+  },
+  tabs: {
+    display: "flex", borderBottom: "1px solid #e5e7eb", padding: "0 24px",
+  },
+  tab: {
+    padding: "12px 16px", background: "none", border: "none",
+    fontSize: "13px", color: "#9ca3af", cursor: "pointer",
+    borderBottom: "2px solid transparent", marginBottom: "-1px",
+  },
+  tabActive: { color: "#000", borderBottomColor: "#000", fontWeight: "bold" },
+  modalBody: {
+    padding: isMobile ? "16px" : "24px",
+    flex: 1,
+    overflowY: "auto",
+  },
+  inputLabel: { fontSize: "13px", fontWeight: "500", marginBottom: "6px", color: "#374151" },
+  input: {
+    width: "100%", padding: "10px 12px", border: "1px solid #e5e7eb",
+    borderRadius: "8px", fontSize: "16px", outline: "none",
+    fontFamily: "inherit", boxSizing: "border-box",
+  },
+  submitBtn: {
+    width: "100%", marginTop: "20px", padding: "10px",
+    background: "#111827", color: "#fff", border: "none",
+    borderRadius: "8px", fontSize: "14px", fontWeight: "500", cursor: "pointer",
+  },
+  addRowBtn: {
+    background: "none", border: "1px dashed #e5e7eb",
+    borderRadius: "8px", padding: "8px 14px",
+    fontSize: "13px", color: "#9ca3af", cursor: "pointer",
+    width: "100%", marginTop: "4px",
+  },
+};
+
+function SortableInstruction({ id, instruction, index, onChange, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id });
 
@@ -87,7 +147,7 @@ function SortableInstruction({ id, instruction, index, onChange, onDelete, style
   );
 }
 
-export default function EditRecipeModal({ rcp, rcpIndex, onSave, onClose, styles }) {
+export default function EditRecipeModal({ rcp, rcpIndex, onSave, onClose }) {
   const [activeVersionId, setActiveVersionId] = useState(rcp.versions[0].id);
   const [editingRecipe, setEditingRecipe] = useState(() => {
     // Convert plain string instructions to {id, text} objects
@@ -188,7 +248,6 @@ export default function EditRecipeModal({ rcp, rcpIndex, onSave, onClose, styles
             <TagInput
             tags={editingRecipe.tags || []}
             onChange={tags => setEditingRecipe({ ...editingRecipe, tags })}
-            styles={styles}
             />
       </div>
 
@@ -321,8 +380,6 @@ export default function EditRecipeModal({ rcp, rcpIndex, onSave, onClose, styles
                 id={instruction.id}
                 instruction={instruction}
                 index={i}
-                styles={styles}
-                isMobile={isMobile}
                 onChange={value => {
                   const updated = activeVersion.instructions.map(inst =>
                     inst.id === instruction.id ? { ...inst, text: value } : inst
