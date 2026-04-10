@@ -158,7 +158,7 @@ function SortableInstruction({ id, instruction, index, onChange, onDelete }) {
   );
 }
 
-export default function AddRecipeModal({ onClose, onSave }) {
+export default function AddRecipeModal({ onClose, onSave, onImport }) {
   const [activeTab, setActiveTab] = useState("url");
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -167,6 +167,25 @@ export default function AddRecipeModal({ onClose, onSave }) {
   const [parsedRecipe, setParsedRecipe] = useState(null);
   const [selectedEmoji, setSelectedEmoji] = useState("😀");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [importError, setImportError] = useState(null);
+
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImportError(null);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const imported = JSON.parse(ev.target.result);
+        if (!Array.isArray(imported)) throw new Error("File must contain an array of recipes.");
+        onImport(imported);
+        onClose();
+      } catch (err) {
+        setImportError(err.message || "Invalid file format.");
+      }
+    };
+    reader.readAsText(file);
+  };
 
 const handleAddFromUrl = async () => {
   if (!url) return;
@@ -263,6 +282,12 @@ const handleAddFromUrl = async () => {
         onClick={() => setActiveTab("url")}
         >
         Paste a URL
+        </button>
+        <button
+        style={{ ...styles.tab, ...(activeTab === "import" ? styles.tabActive : {}) }}
+        onClick={() => setActiveTab("import")}
+        >
+        Import JSON
         </button>
     </div>
 
@@ -589,6 +614,28 @@ const handleAddFromUrl = async () => {
                     </button>
                     </div>
             </div>
+            )}
+        </div>
+        )}
+
+        {activeTab === "import" && (
+        <div>
+            <p style={styles.inputLabel}>Import from JSON file</p>
+            <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "16px" }}>
+            Select a <strong>cookmark-recipes.json</strong> file you previously exported. This will merge the recipes into your collection.
+            </p>
+            <label style={{
+            display: "block", border: "2px dashed #e5e7eb", borderRadius: "10px",
+            padding: "32px", textAlign: "center", cursor: "pointer",
+            }}>
+            <input type="file" accept=".json" onChange={handleImport} style={{ display: "none" }} />
+            <p style={{ fontSize: "14px", color: "#6b7280", margin: 0 }}>Tap to choose file</p>
+            <p style={{ fontSize: "12px", color: "#9ca3af", marginTop: "6px" }}>
+                .json files only
+            </p>
+            </label>
+            {importError && (
+            <p style={{ fontSize: "13px", color: "#dc2626", marginTop: "12px" }}>{importError}</p>
             )}
         </div>
         )}

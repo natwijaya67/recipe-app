@@ -13,6 +13,15 @@ export default function Collection() {
   const [editingRecipe, setEditingRecipe] = useState(null);      
   const [editingRecipeIndex, setEditingRecipeIndex] = useState(null); 
 
+  const exportRecipes = () => {
+    const blob = new Blob([JSON.stringify(recipes, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "cookmark-recipes.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   const addToGroceries = (recipe, version) => {
     const existing = JSON.parse(localStorage.getItem("groceryList") || "[]");
     const activeIngredients = version?.ingredients || recipe.versions?.[0]?.ingredients || [];
@@ -57,9 +66,14 @@ export default function Collection() {
               : `${filteredRecipes.length} of ${recipes.length} recipes`}
           </p>
         </div>
-        <button style={styles.addBtn} onClick={() => setShowAddModal(true)}>
-          + Add Recipe
-        </button>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button style={styles.exportBtn} onClick={exportRecipes}>
+            Export
+          </button>
+          <button style={styles.addBtn} onClick={() => setShowAddModal(true)}>
+            + Add Recipe
+          </button>
+        </div>
       </div>
 
       {allTags.length > 0 && (
@@ -182,6 +196,7 @@ export default function Collection() {
       <AddRecipeModal
         onClose={() => setShowAddModal(false)}
         onSave={recipe => setRecipes(prev => [...prev, recipe])}
+        onImport={imported => setRecipes(prev => [...prev, ...imported])}
         />
 )}
 
@@ -197,6 +212,11 @@ const styles = {
   addBtn: {
     padding: "8px 16px", background: "#111827", color: "#fff",
     border: "none", borderRadius: "8px", fontSize: "13px",
+    fontWeight: "500", cursor: "pointer",
+  },
+  exportBtn: {
+    padding: "8px 16px", background: "none", color: "#6b7280",
+    border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "13px",
     fontWeight: "500", cursor: "pointer",
   },
   grid: {
