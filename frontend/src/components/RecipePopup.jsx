@@ -155,6 +155,12 @@ export default function RecipePopup({ recipe, onClose, onEdit, onAddToGroceries 
                   <p key={i} style={styles.step}>{i + 1}. {typeof step === "object" ? step.text : step}</p>
                 ))}
               </div>
+              {activeVersion.notes && (
+                <div style={styles.section}>
+                  <p style={styles.sectionTitle}>Notes</p>
+                  <p style={{ ...styles.step, whiteSpace: "pre-wrap" }}>{activeVersion.notes}</p>
+                </div>
+              )}
             </>
           )}
         </div>

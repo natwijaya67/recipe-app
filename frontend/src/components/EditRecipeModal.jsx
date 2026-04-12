@@ -407,6 +407,15 @@ export default function EditRecipeModal({ rcp, rcpIndex, onSave, onClose }) {
           + Add step
         </button>
 
+        {/* Notes */}
+        <p style={{ ...styles.inputLabel, marginTop: "20px" }}>Notes</p>
+        <textarea
+          style={{ ...styles.input, resize: "vertical", minHeight: "80px" }}
+          placeholder="Personal tweaks, tips, substitutions..."
+          value={activeVersion.notes || ""}
+          onChange={e => updateActiveVersion({ notes: e.target.value })}
+        />
+
         {/* Save */}
         <div style={{
           position: "sticky", bottom: 0,

@@ -588,6 +588,17 @@ const handleAddFromUrl = async () => {
                 + Add step
                 </button>
 
+                <p style={{ ...styles.inputLabel, marginTop: "20px" }}>Notes</p>
+                <textarea
+                    style={{ ...styles.input, resize: "vertical", minHeight: "80px" }}
+                    placeholder="Personal tweaks, tips, substitutions..."
+                    value={parsedRecipe.versions[0].notes || ""}
+                    onChange={e => setParsedRecipe({
+                        ...parsedRecipe,
+                        versions: [{ ...parsedRecipe.versions[0], notes: e.target.value }]
+                    })}
+                />
+
                 <div style={{
                     position: "sticky",
                     bottom: 0,
