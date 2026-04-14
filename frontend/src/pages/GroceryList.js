@@ -141,11 +141,9 @@ const handleDragEnd = (event) => {
 
       {/* Header */}
       <div style={styles.header}>
-        <div>
-          <h2 style={styles.title}>Grocery List</h2>
-          <p style={styles.count}>{items.length} items · {checkedCount} checked</p>
-        </div>
-        <div style={styles.headerBtns}>
+        <h2 style={styles.title}>Grocery List</h2>
+        <p style={styles.count}>{items.length} items · {checkedCount} checked</p>
+        <div style={{ ...styles.headerBtns, marginTop: "12px", justifyContent: "flex-end" }}>
           <button
             style={styles.clearBtn}
             onClick={clearChecked}
@@ -202,10 +200,7 @@ const handleDragEnd = (event) => {
 
 const styles = {
   page: { maxWidth: "600px", margin: "48px auto", padding: "0 24px" },
-  header: {
-    display: "flex", justifyContent: "space-between",
-    alignItems: "flex-start", marginBottom: "24px",
-  },
+  header: { marginBottom: "24px" },
   title: { fontSize: "22px", fontWeight: "500", marginBottom: "4px" },
   count: { fontSize: "13px", color: "#9ca3af" },
   headerBtns: { display: "flex", gap: "8px" },

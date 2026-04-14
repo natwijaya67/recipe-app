@@ -3,12 +3,14 @@ import { useRecipes } from "../hooks/useRecipes";
 import RecipePopup from "../components/RecipePopup";
 import AddRecipeModal from "../components/AddRecipeModal";
 import EditRecipeModal from "../components/EditRecipeModal";
+import PantryModal from "../components/PantryModal";
 import { TagChip } from "../components/TagInput";
 
 
 export default function Collection() {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showPantry, setShowPantry] = useState(false);
   const {recipes, setRecipes} = useRecipes();
   const [editingRecipe, setEditingRecipe] = useState(null);      
   const [editingRecipeIndex, setEditingRecipeIndex] = useState(null); 
@@ -44,12 +46,17 @@ export default function Collection() {
     setEditingRecipeIndex(i);
   };
   const [activeTags, setActiveTags] = useState([]);
+  const [sortOrder, setSortOrder] = useState("recent");
   const allTags = [...new Set(recipes.flatMap(r => r.tags || []))];
-  const filteredRecipes = activeTags.length === 0
-  ? recipes
-  : recipes.filter(r =>
-      activeTags.some(tag => r.tags?.includes(tag))  
-    );
+  const filteredRecipes = (() => {
+    const filtered = activeTags.length === 0
+      ? [...recipes]
+      : recipes.filter(r => activeTags.some(tag => r.tags?.includes(tag)));
+    const textOnly = name => name.replace(/^[^\p{L}\p{N}]+/u, "").trim();
+    if (sortOrder === "az") filtered.sort((a, b) => textOnly(a.name).localeCompare(textOnly(b.name)));
+    if (sortOrder === "za") filtered.sort((a, b) => textOnly(b.name).localeCompare(textOnly(a.name)));
+    return filtered;
+  })();
 
 
 
@@ -58,20 +65,30 @@ export default function Collection() {
 
       {/* Page Header */}
       <div style={styles.header}>
-        <div>
-          <h2 style={styles.title}>My Collection</h2>
-          <p style={styles.count}>
-            {filteredRecipes.length === recipes.length
-              ? `${recipes.length} recipes`
-              : `${filteredRecipes.length} of ${recipes.length} recipes`}
-          </p>
-        </div>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button style={styles.exportBtn} onClick={exportRecipes}>
-            Export
+        <h2 style={styles.title}>My Collection</h2>
+        <p style={styles.count}>
+          {filteredRecipes.length === recipes.length
+            ? `${recipes.length} recipes`
+            : `${filteredRecipes.length} of ${recipes.length} recipes`}
+        </p>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "12px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <button style={styles.pantryBtn} onClick={() => setShowPantry(true)}>
+            🥫 Pantry
           </button>
           <button style={styles.addBtn} onClick={() => setShowAddModal(true)}>
             + Add Recipe
+          </button>
+          <select
+            value={sortOrder}
+            onChange={e => setSortOrder(e.target.value)}
+            style={styles.sortSelect}
+          >
+            <option value="recent">Recently Added</option>
+            <option value="az">Name A–Z</option>
+            <option value="za">Name Z–A</option>
+          </select>
+          <button style={styles.exportBtn} onClick={exportRecipes}>
+            Export
           </button>
         </div>
       </div>
@@ -191,6 +208,8 @@ export default function Collection() {
         />
       )}
 
+      {showPantry && <PantryModal onClose={() => setShowPantry(false)} />}
+
       {/* Add Recipe Modal */}
       {showAddModal && (
       <AddRecipeModal
@@ -206,7 +225,7 @@ export default function Collection() {
 
 const styles = {
   page: { maxWidth: "900px", margin: "48px auto", padding: "0 24px" },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "28px" },
+  header: { marginBottom: "28px" },
   title: { fontSize: "22px", fontWeight: "500", marginBottom: "4px" },
   count: { fontSize: "13px", color: "#9ca3af" },
   addBtn: {
@@ -214,10 +233,20 @@ const styles = {
     border: "none", borderRadius: "8px", fontSize: "13px",
     fontWeight: "500", cursor: "pointer",
   },
+  pantryBtn: {
+    padding: "8px 16px", background: "none", color: "#6b7280",
+    border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "13px",
+    fontWeight: "500", cursor: "pointer",
+  },
   exportBtn: {
     padding: "8px 16px", background: "none", color: "#6b7280",
     border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "13px",
     fontWeight: "500", cursor: "pointer",
+  },
+  sortSelect: {
+    padding: "8px 12px", background: "none", color: "#6b7280",
+    border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "13px",
+    cursor: "pointer", fontFamily: "inherit",
   },
   grid: {
     display: "grid",
