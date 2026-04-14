@@ -464,7 +464,7 @@ const handleAddFromUrl = async () => {
                     {isMobile && <p style={{ fontSize: "12px", color: "#9ca3af", margin: "0" }}>Amount</p>}
                     <input
                     style={{ ...styles.input, width: isMobile ? "100%" : "80px" }}
-                    placeholder="amt"
+                    placeholder="1 1/2"
                     value={ing.amount || ""}
                     onChange={e => {
                         const updated = [...parsedRecipe.versions[0].ingredients];
