@@ -58,7 +58,6 @@ const styles = {
     padding: isMobile ? "16px" : "24px",
     flex: 1,
     overflowY: "auto",
-    overflowX: "hidden",
   },
   inputLabel: { fontSize: "13px", fontWeight: "500", marginBottom: "6px", color: "#374151" },
   input: {
