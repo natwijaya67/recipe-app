@@ -12,8 +12,9 @@ export default function Collection() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPantry, setShowPantry] = useState(false);
   const {recipes, setRecipes} = useRecipes();
-  const [editingRecipe, setEditingRecipe] = useState(null);      
-  const [editingRecipeIndex, setEditingRecipeIndex] = useState(null); 
+  const [editingRecipe, setEditingRecipe] = useState(null);
+  const [editingRecipeIndex, setEditingRecipeIndex] = useState(null);
+  const [deleteIndex, setDeleteIndex] = useState(null);
 
   const exportRecipes = () => {
     const blob = new Blob([JSON.stringify(recipes, null, 2)], { type: "application/json" });
@@ -37,8 +38,13 @@ export default function Collection() {
   };
 
   const deleteCard = (e, i) => {
-    e.stopPropagation(); 
-    setRecipes(prev => prev.filter((_, idx) => idx !== i));
+    e.stopPropagation();
+    setDeleteIndex(i);
+  };
+
+  const confirmDelete = () => {
+    setRecipes(prev => prev.filter((_, idx) => idx !== deleteIndex));
+    setDeleteIndex(null);
   };
   const openEdit = (e, recipe, i) => {
     e.stopPropagation();
@@ -210,6 +216,19 @@ export default function Collection() {
 
       {showPantry && <PantryModal onClose={() => setShowPantry(false)} />}
 
+      {deleteIndex !== null && (
+        <div style={styles.overlay} onClick={() => setDeleteIndex(null)}>
+          <div style={styles.confirmModal} onClick={e => e.stopPropagation()}>
+            <p style={styles.confirmTitle}>Delete recipe?</p>
+            <p style={styles.confirmSub}>{recipes[deleteIndex]?.name}</p>
+            <div style={styles.confirmBtns}>
+              <button style={styles.cancelBtn} onClick={() => setDeleteIndex(null)}>Cancel</button>
+              <button style={styles.deleteBtn} onClick={confirmDelete}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Recipe Modal */}
       {showAddModal && (
       <AddRecipeModal
@@ -267,6 +286,25 @@ const styles = {
     background: "none", border: "none", color: "#d1d5db",
     cursor: "pointer", fontSize: "14px", padding: "2px 6px",
     borderRadius: "4px", lineHeight: 1,
+  },
+  overlay: {
+    position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+    display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
+  },
+  confirmModal: {
+    background: "#fff", borderRadius: "12px", padding: "24px",
+    width: "100%", maxWidth: "320px", margin: "0 16px", textAlign: "center",
+  },
+  confirmTitle: { fontSize: "16px", fontWeight: "500", marginBottom: "6px" },
+  confirmSub: { fontSize: "13px", color: "#9ca3af", marginBottom: "20px" },
+  confirmBtns: { display: "flex", gap: "8px" },
+  cancelBtn: {
+    flex: 1, padding: "10px", background: "#f3f4f6", color: "#111827",
+    border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: "500", cursor: "pointer",
+  },
+  deleteBtn: {
+    flex: 1, padding: "10px", background: "#dc2626", color: "#fff",
+    border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: "500", cursor: "pointer",
   },
   editCardBtn: {
     marginTop: "10px", width: "100%", padding: "7px",
