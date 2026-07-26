@@ -529,7 +529,10 @@ const handleAddFromUrl = async () => {
                 style={styles.addRowBtn}
                 onClick={() => setParsedRecipe({
                     ...parsedRecipe,
-                    ingredients: [...parsedRecipe.versions[0].ingredients, { amount: "", unit: "", item: "" }]
+                    versions: [{
+                        ...parsedRecipe.versions[0],
+                        ingredients: [...parsedRecipe.versions[0].ingredients, { amount: "", unit: "", item: "" }]
+                    }]
                 })}
                 >
                 + Add ingredient

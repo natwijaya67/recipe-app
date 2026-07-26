@@ -227,11 +227,9 @@ export default function EditRecipeModal({ rcp, rcpIndex, onSave, onClose }) {
 
   const deleteVersion = (id) => {
     if (editingRecipe.versions.length === 1) return;
-    setEditingRecipe(prev => ({
-      ...prev,
-      versions: prev.versions.filter(v => v.id !== id)
-    }));
-    setActiveVersionId(editingRecipe.versions[0].id);
+    const remaining = editingRecipe.versions.filter(v => v.id !== id);
+    setEditingRecipe(prev => ({ ...prev, versions: remaining }));
+    if (activeVersionId === id) setActiveVersionId(remaining[0].id);
   };
 
   return (
